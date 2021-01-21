@@ -1,0 +1,28 @@
+{
+  "name": "migration-tool",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Migrate from a v8 instance to v9 instance.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/directus/migration-tool.git"
+  },
+  "keywords": [],
+  "author": "rijkvanzanten",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/directus/migration-tool/issues"
+  },
+  "homepage": "https://github.com/directus/migration-tool#readme",
+  "devDependencies": {
+    "dotenv": "^8.2.0"
+  },
+  "dependencies": {
+    "axios": "^0.21.1"
+  }
+}
