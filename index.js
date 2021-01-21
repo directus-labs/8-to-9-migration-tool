@@ -1,18 +1,24 @@
-import dotenv from 'dotenv';
-import axios from 'axios';
+import Listr from 'listr';
 
-dotenv.config();
+import { downloadMigrations } from './tasks/collections.js';
 
-const apiV8 = axios.create({
-   baseURL: process.env.V8_URL,
-   headers: {
-      Authorization: `Bearer ${process.env.V8_TOKEN}`
+const tasks = new Listr([
+   {
+      title: 'Migrating Collections...',
+      task: () => new Listr([
+         {
+            title: 'Downloading migrations',
+            task: downloadMigrations
+         }
+      ])
    }
+]);
+
+tasks.run().catch(err => {
+	console.error(err);
 });
 
-const apiV9 = axios.create({
-   baseURL: process.env.V9_URL,
-   headers: {
-      Authorization: `Bearer ${process.env.V9_TOKEN}`
-   }
-});
+async function migrateCollections() {
+
+}
+
