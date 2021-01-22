@@ -1,24 +1,19 @@
 import Listr from 'listr';
 
-import { downloadMigrations } from './tasks/collections.js';
+import { migrateSchema } from './tasks/schema.js';
+import { migrateUsers } from './tasks/users.js';
 
 const tasks = new Listr([
    {
-      title: 'Migrating Collections...',
-      task: () => new Listr([
-         {
-            title: 'Downloading migrations',
-            task: downloadMigrations
-         }
-      ])
-   }
+      title: 'Migrating Schema',
+      task: migrateSchema
+   },
+   {
+      title: 'Migrating Users',
+      task: migrateUsers
+   },
 ]);
 
 tasks.run().catch(err => {
 	console.error(err);
 });
-
-async function migrateCollections() {
-
-}
-
