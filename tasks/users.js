@@ -1,7 +1,5 @@
 import Listr from 'listr';
 import { apiV8, apiV9 } from '../api.js';
-import { typeMap } from '../constants/type-map.js';
-import { interfaceMap } from '../constants/interface-map.js';
 
 export async function migrateUsers(context) {
    return new Listr([
