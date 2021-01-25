@@ -54,7 +54,10 @@ function uploadBatch(page) {
       task.output = fileRecord.filename_download;
 
       const savedFile = await apiV9.post("/files/import", {
-        url: fileRecord.data.full_url,
+        url:
+          process.env.V8_URL +
+          "/" +
+          fileRecord.data.asset_url.split("/").slice(2).join("/"),
         data: {
           filename_download: fileRecord.filename_download,
           title: fileRecord.title,
