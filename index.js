@@ -24,15 +24,35 @@ const tasks = new Listr([
   },
 ]);
 
-console.log(
-  `✨ Migrating ${process.env.V8_URL} (v8) to ${process.env.V9_URL} (v9)...`
-);
+const variables = {
+  'V8_URL': process.env.V8_URL,
+  'V9_URL': process.env.V9_URL,
+  'V8_TOKEN': process.env.V8_TOKEN,
+  'V9_TOKEN': process.env.V9_TOKEN,
+}
 
-tasks
-  .run()
-  .then(() => {
-    console.log("✨ All set! Migration successful.");
-  })
-  .catch((err) => {
-    console.error(err);
-  });
+let allConfigured = true
+
+for(const [key, value] of Object.entries(variables)) {
+  if(value === undefined) {
+    allConfigured = false
+    console.log(`❌ It seems that your config is not configured correctly. (${key} is undefined)`)
+  }
+}
+
+if (allConfigured) {
+  console.log(
+    `✨ Migrating ${process.env.V8_URL} (v8) to ${process.env.V9_URL} (v9)...`
+  );
+  
+  
+  tasks
+    .run()
+    .then(() => {
+      console.log("✨ All set! Migration successful.");
+    })
+    .catch((err) => {
+      console.error(err);
+    });
+}
+

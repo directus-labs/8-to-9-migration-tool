@@ -16,6 +16,7 @@ export async function migrateData(context) {
 
 async function getCounts(context) {
   context.counts = {};
+  context.failedItems = {}
 
   for (const collection of context.collections) {
     const count = await apiV8.get(`/items/${collection.collection}`, {
@@ -26,6 +27,7 @@ async function getCounts(context) {
     });
 
     context.counts[collection.collection] = count.data.meta.total_count;
+    context.failedItems[collection.collection] = []
   }
 }
 
@@ -48,6 +50,9 @@ function insertCollection(collection) {
       }`;
       await insertBatch(collection, i, context, task);
     }
+
+    if(context.failedItems[collection].length > 0)
+      console.error(`Items of collection (${collection}) with the ids of [${context.failedItems[collection]}] could not be transfered.`)
   };
 }
 
@@ -101,7 +106,7 @@ async function insertBatch(collection, page, context, task) {
       await apiV9.post(`/items/${collection.collection}`, itemRecords);
     }
   } catch (err) {
-    console.log(err.response.data);
+    context.failedItems[collection].push(itemRecords.map(item => item.id))
   }
 }
 

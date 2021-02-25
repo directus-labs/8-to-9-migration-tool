@@ -24,6 +24,7 @@ async function getCount(context) {
 
   context.fileCount = count.data.meta.total_count;
   context.fileMap = {};
+  context.failedUploads = []
 }
 
 async function uploadFiles(context) {
@@ -37,6 +38,8 @@ async function uploadFiles(context) {
       task: uploadBatch(i),
     });
   }
+  if(context.failedUploads.length > 0)
+    console.error(`Files with the id [${context.failedUploads}] could not be transfered.`)
 
   return new Listr(tasks);
 }
@@ -50,22 +53,29 @@ function uploadBatch(page) {
       },
     });
 
+    const failedUploads = []
+
     for (const fileRecord of records.data.data) {
       task.output = fileRecord.filename_download;
 
-      const savedFile = await apiV9.post("/files/import", {
-        url:
-          process.env.V8_URL +
-          "/" +
-          fileRecord.data.asset_url.split("/").slice(2).join("/"),
-        data: {
-          filename_download: fileRecord.filename_download,
-          title: fileRecord.title,
-          description: fileRecord.description,
-        },
-      });
+      try {
+        const savedFile = await apiV9.post("/files/import", {
+          url:
+            process.env.V8_URL +
+            "/" +
+            fileRecord.data.asset_url.split("/").slice(2).join("/"),
+          data: {
+            filename_download: fileRecord.filename_download,
+            title: fileRecord.title,
+            description: fileRecord.description,
+          },
+        });
 
-      context.fileMap[fileRecord.id] = savedFile.data.data.id;
+        context.fileMap[fileRecord.id] = savedFile.data.data.id;
+
+      } catch (error) {
+        context.failedUploads.push(fileRecord.id)
+      }
     }
   };
 }
