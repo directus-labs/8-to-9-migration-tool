@@ -1,6 +1,20 @@
 # Migration Tool
 
-Migrate from a v8 instance to v9 instance.
+Migrate from a v8 instance to v9 instance. 
+
+This tool will copy over:
+
+* Schema (collections / fields)
+* Files (including file contents)
+* User data (eg all items in all collections)
+* Roles
+* Users
+
+**Note:** This tool will NOT copy over:
+
+* Interface/display configurations
+* Permissions
+* Activity / revisions
 
 ## Usage
 
