@@ -40,7 +40,7 @@ async function createRoles(context) {
       app_access: true,
    }));
 
-   const createdRoles = await apiV9.post('/roles', rolesV9, { limit: -1 });
+   const createdRoles = await apiV9.post('/roles', rolesV9, { params: { limit: -1 } });
 
    context.roleMap = {};
 
@@ -70,7 +70,7 @@ async function createUsers(context) {
       token: user.token,
    }));
 
-   const createdUsers = await apiV9.post('/users', usersV9, { limit: -1 });
+   const createdUsers = await apiV9.post('/users', usersV9, { params: { limit: -1 } });
 
    context.userMap = {};
 
