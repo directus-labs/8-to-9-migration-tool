@@ -24,7 +24,9 @@ async function downloadSchema(context) {
   const response = await apiV8.get("/collections");
   context.collections = response.data.data.filter(
     (collection) => collection.collection.startsWith("directus_") === false
-  ).filter((collection) => !context.skipCollections.includes(collection.collection));
+  ).filter(
+    (collection) => !context.skipCollections.includes(collection.collection)
+  );
 }
 
 async function migrateCollections(context) {
