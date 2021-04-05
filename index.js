@@ -7,7 +7,7 @@ import { migrateUsers } from "./tasks/users.js";
 import { migrateData } from "./tasks/data.js";
 
 const commandLineOptions = commandLineArgs([
-  { name: 'skip', alias: 's', type: String, multiple: true, defaultValue: []}
+  { name: 'skipCollections', alias: 's', type: String, multiple: true, defaultValue: []}
 ]);
 
 const tasks = new Listr([
