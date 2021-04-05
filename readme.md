@@ -28,3 +28,7 @@ V9_URL="https://v9.example.com"
 V9_TOKEN="admin"
 ```
 3) Run the `index.js` file: `node index.js`
+    1) You can exclude collections from being migrated by using:
+    ```
+    node index.js -s <table_name> <another_table_name>
+    ```
