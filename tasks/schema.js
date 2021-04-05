@@ -7,15 +7,15 @@ export async function migrateSchema(context) {
   return new Listr([
     {
       title: "Downloading Schema",
-      task: downloadSchema,
+      task: () => downloadSchema(context),
     },
     {
       title: "Creating Collections",
-      task: migrateCollections,
+      task: () => migrateCollections(context),
     },
     {
       title: "Migrating Relations",
-      task: migrateRelations,
+      task: () => migrateRelations(context),
     },
   ]);
 }
@@ -24,7 +24,7 @@ async function downloadSchema(context) {
   const response = await apiV8.get("/collections");
   context.collections = response.data.data.filter(
     (collection) => collection.collection.startsWith("directus_") === false
-  );
+  ).filter((collection) => !context.skipCollections.includes(collection.collection));
 }
 
 async function migrateCollections(context) {
@@ -72,7 +72,7 @@ function migrateCollection(collection) {
             false
               ? {
                   has_auto_increment: details.auto_increment,
-                  default_value: details.default_value,
+                  default_value: extractValue(details),
                   is_primary_key: details.primary_key,
                   is_nullable: details.required === false,
                   max_length: details.length,
@@ -87,6 +87,18 @@ function migrateCollection(collection) {
 
     await apiV9.post("/collections", collectionV9);
   };
+
+  function extractValue(details) {
+    if (typeMap[details.type.toLowerCase()] === "json") {
+      try {
+        JSON.parse(details.default_value);
+      } catch(ex) {
+        return JSON.stringify(details.default_value);
+      }
+    }
+
+    return details.default_value;
+  }
 
   function extractSpecial(details) {
     if (details.type === "alias") {
