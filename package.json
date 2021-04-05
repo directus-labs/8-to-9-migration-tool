@@ -24,6 +24,7 @@
   },
   "dependencies": {
     "axios": "^0.21.1",
+    "command-line-args": "^5.1.1",
     "listr": "^0.14.3"
   },
   "engines": {
