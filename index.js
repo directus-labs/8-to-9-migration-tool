@@ -1,14 +1,19 @@
 import Listr from "listr";
 
+import commandLineArgs from 'command-line-args';
 import { migrateSchema } from "./tasks/schema.js";
 import { migrateFiles } from "./tasks/files.js";
 import { migrateUsers } from "./tasks/users.js";
 import { migrateData } from "./tasks/data.js";
 
+const commandLineOptions = commandLineArgs([
+  { name: 'skip', alias: 's', type: String, multiple: true, defaultValue: []}
+]);
+
 const tasks = new Listr([
   {
     title: "Migrating Schema",
-    task: migrateSchema,
+    task: () => migrateSchema({skipCollections: commandLineOptions.skipCollections }),
   },
   {
     title: "Migration Files",
