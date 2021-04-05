@@ -38,7 +38,7 @@ async function uploadFiles(context) {
     });
   }
 
-  return new Listr(tasks);
+  return new Listr(tasks, { concurrent: tasks.length / 10 });
 }
 
 function uploadBatch(page) {
@@ -54,10 +54,7 @@ function uploadBatch(page) {
       task.output = fileRecord.filename_download;
 
       const savedFile = await apiV9.post("/files/import", {
-        url:
-          process.env.V8_URL +
-          "/" +
-          fileRecord.data.asset_url.split("/").slice(2).join("/"),
+        url: process.env.V8_URL + "/" + process.env.V8_PROJECT_NAME + "/" + fileRecord.data.asset_url.split("/").slice(2).join("/"),
         data: {
           filename_download: fileRecord.filename_download,
           title: fileRecord.title,

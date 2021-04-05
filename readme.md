@@ -20,17 +20,27 @@ This tool will copy over:
 
 1) Clone this repo
 2) Add a .env file with the following values:
+***
+You SHOULD use either Cookie or JWT authentication (leaving one or the other empty).
+
+Using `Cookie Authentication` provides you with more time to migrate large amounts of data like the [project files](https://v8.docs.directus.io/guides/files.html#files-thumbnails).
+
+See [documentation](https://v8.docs.directus.io/api/authentication.html#tokens) for more details on obtaining
+authentication tokens on Directus v8.
+***
 ```
-V8_URL="https://v8.example.com/project"
+V8_URL="https://v8.example.com"
+V8_PROJECT_NAME="project"
 V8_TOKEN="admin"
+V8_COOKIE_TOKEN="cookie_value"
 
 V9_URL="https://v9.example.com"
 V9_TOKEN="admin"
 ```
 3) Run the `index.js` file: `node index.js`
-   
-### NOTE
+***
 You can exclude collections/database tables from being migrated by using:
 ```
 node index.js -s <table_name> <another_table_name>
 ```
+***
