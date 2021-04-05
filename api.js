@@ -4,9 +4,10 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 const apiV8 = axios.create({
-   baseURL: process.env.V8_URL,
+   baseURL: process.env.V8_URL + "/" + process.env.V8_PROJECT_NAME,
    headers: {
-      Authorization: `Bearer ${process.env.V8_TOKEN}`
+      Authorization: `Bearer ${process.env.V8_TOKEN}`,
+      Cookie: `directus-${process.env.V8_PROJECT_NAME}-session=${process.env.V8_COOKIE_TOKEN}`
    }
 });
 
