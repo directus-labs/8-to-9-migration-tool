@@ -46,7 +46,11 @@ function migrateCollection(collection) {
         note: collection.note,
         hidden: collection.hidden,
         singleton: collection.single,
-        translations: collection.translation,
+        icon: collection.icon,
+        translations: collection.translation?.map(({locale, translation}) => ({
+          language: locale,
+          translation
+        })),
         sort_field:
           Object.entries(collection.fields).find(([field, details]) => {
             return (details.type || "").toLowerCase() === "sort";
@@ -63,7 +67,10 @@ function migrateCollection(collection) {
           meta: {
             note: details.note,
             interface: interfaceMap[(details.interface || "").toLowerCase()],
-            translation: details.translation,
+            translations: details.translation?.map(({locale, translation}) => ({
+              language: locale,
+              translation
+            })),
             readonly: details.readonly,
             hidden: details.hidden_detail,
             width: details.width,
