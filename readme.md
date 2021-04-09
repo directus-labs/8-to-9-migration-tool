@@ -37,7 +37,8 @@ V8_COOKIE_TOKEN="cookie_value"
 V9_URL="https://v9.example.com"
 V9_TOKEN="admin"
 ```
-3) Run the `index.js` file: `node index.js`
+3) Run `npm install`
+4) Run the `index.js` file: `node index.js`
 ***
 You can exclude collections/database tables from being migrated by using:
 ```
