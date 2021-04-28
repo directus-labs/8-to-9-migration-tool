@@ -40,6 +40,9 @@ async function migrateCollections(context) {
 
 function migrateCollection(collection) {
   return async () => {
+
+    const statusField = Object.values(collection.fields).find((field) => field.interface === "status")
+
     const collectionV9 = {
       collection: collection.collection,
       meta: {
@@ -55,6 +58,11 @@ function migrateCollection(collection) {
           Object.entries(collection.fields).find(([field, details]) => {
             return (details.type || "").toLowerCase() === "sort";
           })?.field || null,
+        ...(statusField ? {
+          archive_field: statusField.field,
+          archive_value: Object.values(statusField.options.status_mapping).find((option) => option.soft_delete).value,
+          unarchive_value: Object.values(statusField.options.status_mapping).find((option) => !option.soft_delete && !option.published).value
+        } : {})
       },
       schema: {},
       fields: Object.entries(collection.fields).map(([field, details]) => {
@@ -75,6 +83,32 @@ function migrateCollection(collection) {
             hidden: details.hidden_detail,
             width: details.width,
             special: extractSpecial(details),
+            options:
+              details.interface === "repeater"
+                ? {
+                    fields: details.options.fields.map((field) => ({
+                      name: field.field,
+                      type: field.type,
+                      field: field.field,
+                      meta: {
+                        name: field.field,
+                        type: field.type,
+                        field: field.field,
+                        width: field.width,
+                        interface: field.interface,
+                      },
+                    })),
+                  }
+                : details.interface === "status"
+                ? {
+                  "choices": Object.values(details.options.status_mapping).map(({name, value}) => (
+                    {
+                      "text": name,
+                      "value": value
+                    }
+                  ))
+                }
+                : null,
           },
           schema:
             ["alias", "o2m"].includes(typeMap[details.type.toLowerCase()]) ===
