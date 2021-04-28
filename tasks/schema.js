@@ -31,15 +31,70 @@ async function downloadSchema(context) {
 
 async function migrateCollections(context) {
   return new Listr(
-    context.collections.map((collection) => ({
-      title: collection.collection,
-      task: migrateCollection(collection),
-    }))
+    context.collections
+      .map((collection) => ({
+        title: collection.collection,
+        task: migrateCollection(collection),
+      }))
   );
+}
+
+function migrateFieldOptions(fieldDetails) {
+  if (fieldDetails.interface === "divider") {
+    return {
+      title: fieldDetails.options.title,
+      marginTop: fieldDetails.options.margin,
+    };
+  }
+
+  if (fieldDetails.interface === "status") {
+    return {
+      choices: Object.values(fieldDetails.options.status_mapping).map(
+        ({ name, value }) => ({
+          text: name,
+          value: value,
+        })
+      ),
+    };
+  }
+
+  if (fieldDetails.interface === "dropdown") {
+    return {
+      choices: Object.entries(fieldDetails.options.choices).map(
+        ([value, text]) => ({
+          text,
+          value,
+        })
+      ),
+      placeholder: fieldDetails.options.placeholder,
+    };
+  }
+
+  if (fieldDetails.interface === "repeater") {
+    return {
+      fields: fieldDetails.options.fields.map((field) => ({
+        name: field.field,
+        type: field.type,
+        field: field.field,
+        meta: {
+          name: field.field,
+          type: field.type,
+          field: field.field,
+          width: field.width,
+          interface: field.interface,
+          options: migrateFieldOptions(field),
+        },
+      })),
+    };
+  }
 }
 
 function migrateCollection(collection) {
   return async () => {
+    const statusField = Object.values(collection.fields).find(
+      (field) => field.interface === "status"
+    );
+
     const collectionV9 = {
       collection: collection.collection,
       meta: {
@@ -47,19 +102,33 @@ function migrateCollection(collection) {
         hidden: collection.hidden,
         singleton: collection.single,
         icon: collection.icon,
-        translations: collection.translation?.map(({locale, translation}) => ({
-          language: locale,
-          translation
-        })),
+        translations: collection.translation?.map(
+          ({ locale, translation }) => ({
+            language: locale,
+            translation,
+          })
+        ),
         sort_field:
           Object.entries(collection.fields).find(([field, details]) => {
             return (details.type || "").toLowerCase() === "sort";
           })?.field || null,
+        ...(statusField
+          ? {
+              archive_field: statusField.field,
+              archive_value: Object.values(
+                statusField.options.status_mapping
+              ).find((option) => option.soft_delete).value,
+              unarchive_value: Object.values(
+                statusField.options.status_mapping
+              ).find((option) => !option.soft_delete && !option.published)
+                .value,
+            }
+          : {}),
       },
       schema: {},
-      fields: Object.entries(collection.fields).map(([field, details]) => {
+      fields: Object.values(collection.fields).map((details) => {
         return {
-          field: field,
+          field: details.field,
           type:
             details.datatype?.toLowerCase() === "text"
               ? "text"
@@ -67,14 +136,18 @@ function migrateCollection(collection) {
           meta: {
             note: details.note,
             interface: interfaceMap[(details.interface || "").toLowerCase()],
-            translations: details.translation?.map(({locale, translation}) => ({
-              language: locale,
-              translation
-            })),
+            translations: details.translation?.map(
+              ({ locale, translation }) => ({
+                language: locale,
+                translation,
+              })
+            ),
             readonly: details.readonly,
             hidden: details.hidden_detail,
             width: details.width,
             special: extractSpecial(details),
+            sort: details.sort,
+            options: migrateFieldOptions(details),
           },
           schema:
             ["alias", "o2m"].includes(typeMap[details.type.toLowerCase()]) ===
@@ -101,7 +174,7 @@ function migrateCollection(collection) {
     if (typeMap[details.type.toLowerCase()] === "json") {
       try {
         JSON.parse(details.default_value);
-      } catch(ex) {
+      } catch (ex) {
         return JSON.stringify(details.default_value);
       }
     }
@@ -110,51 +183,52 @@ function migrateCollection(collection) {
   }
 
   function extractSpecial(details) {
-    if (details.type === "alias") {
+    const type = details.type.toLowerCase();
+    if (type === "alias") {
       return ["alias", "no-data"];
     }
 
-    if (details.type === "boolean") {
+    if (type === "boolean") {
       return ["boolean"];
     }
 
-    if (details.type === "hash") {
+    if (type === "hash") {
       return ["hash"];
     }
 
-    if (details.type === "json") {
+    if (type === "json") {
       return ["json"];
     }
 
-    if (details.type === "uuid") {
+    if (type === "uuid") {
       return ["uuid"];
     }
 
-    if (details.type === "owner") {
+    if (type === "owner") {
       return ["user-created"];
     }
 
-    if (details.type === "user_updated") {
+    if (type === "user_updated") {
       return ["user-updated"];
     }
 
-    if (details.type === "datetime_created") {
+    if (type === "datetime_created") {
       return ["date-created"];
     }
 
-    if (details.type === "datetime_updated") {
+    if (type === "datetime_updated") {
       return ["date-updated"];
     }
 
-    if (details.type === "csv") {
+    if (type === "csv") {
       return ["csv"];
     }
 
-    if (details.type === "o2m") {
+    if (type === "o2m") {
       return ["o2m"];
     }
 
-    if (details.type === "m2o") {
+    if (type === "m2o") {
       return ["m2o"];
     }
   }
