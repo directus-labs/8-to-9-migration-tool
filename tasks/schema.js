@@ -252,6 +252,7 @@ async function migrateRelations(context) {
       one_collection: relation.collection_one,
       one_field: relation.field_one,
       one_primary: "id",
+      junction_field: relation.junction_field,
     }));
 
   const systemFields = context.collections
