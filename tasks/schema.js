@@ -272,7 +272,20 @@ async function migrateRelations(context) {
     )
     .flat();
 
-  await apiV9.post("/relations", [...relationsV9, ...systemFields]);
+  const mappedRelations = [...relationsV9, ...systemFields].map( realtion => {
+    return {
+      meta: realtion,
+      field: realtion.many_field,
+      collection: realtion.many_collection,
+      schema: {
+          table: realtion.many_collection,
+          column:  realtion.many_field,
+          foreign_key_table: realtion.one_collection,
+          foreign_key_column: realtion.id,
+      },
+    }
+  } );
+  await Promise.all(mappedRelations.map( async (relation) => await apiV9.post("/relations",relation)));
 
   context.relations = [...relationsV9, ...systemFields];
 }
