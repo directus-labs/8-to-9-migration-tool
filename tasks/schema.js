@@ -87,6 +87,19 @@ function migrateFieldOptions(fieldDetails) {
       })),
     };
   }
+
+  if (fieldDetails.interface === "checkboxes") {
+    return {
+      choices: Object.entries(fieldDetails.options.choices).map(
+        ([value, text]) => ({
+          text,
+          value,
+        })
+      ),
+      allowOther: fieldDetails.options.allow_other
+    };
+  }
+
 }
 
 function migrateCollection(collection) {
