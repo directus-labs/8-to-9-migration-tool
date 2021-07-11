@@ -143,7 +143,7 @@ function migrateCollection(collection) {
         return {
           field: details.field,
           type:
-            details.datatype?.toLowerCase() === "text"
+            details.datatype?.toLowerCase() === "text" || details.datatype?.toLowerCase() === "longtext"
               ? "text"
               : typeMap[details.type.toLowerCase()],
           meta: {
