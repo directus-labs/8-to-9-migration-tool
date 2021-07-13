@@ -44,7 +44,7 @@ const tasks = new Listr([
   },
   {
     title: "Migrating Users",
-		skip: context => context.completedSteps.users === true,
+		skip: context => context.completedSteps.roles === true && context.completedSteps.users === true,
     task: migrateUsers,
   },
   {
