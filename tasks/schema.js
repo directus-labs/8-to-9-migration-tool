@@ -2,16 +2,29 @@ import Listr from "listr";
 import { apiV8, apiV9 } from "../api.js";
 import { typeMap } from "../constants/type-map.js";
 import { interfaceMap } from "../constants/interface-map.js";
+import { writeContext } from "../index.js";
 
 export async function migrateSchema(context) {
   return new Listr([
     {
       title: "Downloading Schema",
+      skip: context => context.completedSteps.schema === true,
       task: () => downloadSchema(context),
     },
     {
+      title: "Saving schema context",
+      skip: context => context.completedSteps.schema === true,
+      task: () => writeContext(context, "schema")
+    },
+    {
       title: "Creating Collections",
+      skip: context => context.completedSteps.collections === true,
       task: () => migrateCollections(context),
+    },
+    {
+      title: "Saving collections context",
+      skip: context => context.completedSteps.collections === true,
+      task: () => writeContext(context, "collections")
     },
     {
       title: "Migrating Relations",

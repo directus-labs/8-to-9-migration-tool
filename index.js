@@ -31,7 +31,7 @@ const tasks = new Listr([
   },
   {
     title: "Migrating Schema",
-		skip: context => context.completedSteps.schema === true,
+		skip: context => context.completedSteps.schema === true && context.completedSteps.collections === true,
     task: (context) => {
       context.skipCollections = commandLineOptions.skipCollections;
       return migrateSchema(context);

@@ -1,6 +1,7 @@
 {
   "completedSteps": {
     "schema": "false",
+    "collections": "false",
     "files": "false",
     "users": "false",
     "data": "false",
