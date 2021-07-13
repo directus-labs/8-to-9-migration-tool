@@ -31,6 +31,7 @@ const tasks = new Listr([
   },
   {
     title: "Migrating Schema",
+		skip: context => context.completedSteps.schema === true,
     task: (context) => {
       context.skipCollections = commandLineOptions.skipCollections;
       return migrateSchema(context);
@@ -38,14 +39,17 @@ const tasks = new Listr([
   },
   {
     title: "Migration Files",
+		skip: context => context.completedSteps.files === true,
     task: migrateFiles,
   },
   {
     title: "Migrating Users",
+		skip: context => context.completedSteps.users === true,
     task: migrateUsers,
   },
   {
     title: "Migrating Data",
+		skip: context => context.completedSteps.data === true,
     task: migrateData,
   },
 ]);
