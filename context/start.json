@@ -1,10 +1,13 @@
 {
   "completedSteps": {
-    "schema": "false",
-    "collections": "false",
-    "files": "false",
-    "roles": "false",
-    "users": "false",
-    "relations": "false"
-  }
+    "schema": false,
+    "collections": false,
+    "files": false,
+    "roles": false,
+    "users": false,
+    "relations": false,
+    "data": false,
+    "completed": false
+  },
+  "collectionsV9": []
 }

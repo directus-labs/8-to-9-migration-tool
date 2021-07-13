@@ -72,8 +72,8 @@ async function insertBatch(collection, page, context, task) {
 
 	const systemRelationsForCollection = context.relations.filter((relation) => {
 		return (
-			relation.many_collection === collection.collection &&
-			relation.one_collection.startsWith("directus_")
+			relation?.meta?.many_collection === collection.collection &&
+			relation?.meta?.one_collection.startsWith("directus_")
 		);
 	});
 
@@ -82,12 +82,12 @@ async function insertBatch(collection, page, context, task) {
 			? recordsResponse.data.data
 			: recordsResponse.data.data.map((item) => {
 					for (const systemRelation of systemRelationsForCollection) {
-						if (systemRelation.one_collection === "directus_users") {
-							item[systemRelation.many_field] =
-								context.userMap[item[systemRelation.many_field]];
-						} else if (systemRelation.one_collection === "directus_files") {
-							item[systemRelation.many_field] =
-								context.fileMap[item[systemRelation.many_field]];
+						if (systemRelation?.meta?.one_collection === "directus_users") {
+							item[systemRelation?.meta?.many_field] =
+								context.userMap[item[systemRelation?.meta?.many_field]];
+						} else if (systemRelation?.meta?.one_collection === "directus_files") {
+							item[systemRelation?.meta?.many_field] =
+								context.fileMap[item[systemRelation?.meta?.many_field]];
 						}
 					}
 

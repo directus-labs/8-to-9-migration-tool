@@ -26,10 +26,6 @@ export async function migrateSchema(context) {
       skip: context => context.completedSteps.collections === true,
       task: () => writeContext(context, "collections")
     },
-    {
-      title: "Migrating Relations",
-      task: () => migrateRelations(context),
-    },
   ]);
 }
 
@@ -47,7 +43,7 @@ async function migrateCollections(context) {
     context.collections
       .map((collection) => ({
         title: collection.collection,
-        task: migrateCollection(collection),
+        task: migrateCollection(collection, context),
       }))
   );
 }
@@ -115,7 +111,7 @@ function migrateFieldOptions(fieldDetails) {
 
 }
 
-function migrateCollection(collection) {
+function migrateCollection(collection, context) {
   return async () => {
     const statusField = Object.values(collection.fields).find(
       (field) => field.interface === "status"
@@ -197,11 +193,7 @@ function migrateCollection(collection) {
         };
       }),
     };
-<<<<<<< HEAD
-
-=======
     context.collectionsV9.push(collectionV9);
->>>>>>> bc68dee... Adjust behavior of m2m fields during collection creation
     await apiV9.post("/collections", collectionV9);
   };
 
@@ -271,47 +263,4 @@ function migrateCollection(collection) {
       return ["m2o"];
     }
   }
-}
-
-async function migrateRelations(context) {
-  const relations = await apiV8.get("/relations", { params: { limit: -1 } });
-
-  const relationsV9 = relations.data.data
-    .filter((relation) => {
-      return (
-        (relation.collection_many.startsWith("directus_") &&
-          relation.collection_one.startsWith("directus_")) === false
-      );
-    })
-    .map((relation) => ({
-      // @NOTE: one_primary will be removed from Directus soon, so i'm not too worried about it here
-      many_collection: relation.collection_many,
-      many_field: relation.field_many,
-      many_primary: "id",
-      one_collection: relation.collection_one,
-      one_field: relation.field_one,
-      one_primary: "id",
-      junction_field: relation.junction_field,
-    }));
-
-  const systemFields = context.collections
-    .map((collection) =>
-      Object.values(collection.fields)
-        .filter((details) => {
-          return details.type === "file" || details.type.startsWith("user");
-        })
-        .map((field) => ({
-          many_field: field.field,
-          many_collection: collection.collection,
-          many_primary: "id",
-          one_collection:
-            field.type === "file" ? "directus_files" : "directus_users",
-          one_primary: "id",
-        }))
-    )
-    .flat();
-
-  await apiV9.post("/relations", [...relationsV9, ...systemFields]);
-
-  context.relations = [...relationsV9, ...systemFields];
 }

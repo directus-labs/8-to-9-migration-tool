@@ -6,6 +6,7 @@ import { migrateSchema } from "./tasks/schema.js";
 import { migrateFiles } from "./tasks/files.js";
 import { migrateUsers } from "./tasks/users.js";
 import { migrateData } from "./tasks/data.js";
+import { migrateRelations } from "./tasks/relations.js";
 
 const commandLineOptions = commandLineArgs([
 	{
@@ -48,9 +49,19 @@ const tasks = new Listr([
     task: migrateUsers,
   },
   {
+    title: "Migrating Relations",
+    skip: context => context.completedSteps.relations === true,
+    task: migrateRelations,
+  },
+  {
     title: "Migrating Data",
 		skip: context => context.completedSteps.data === true,
     task: migrateData,
+  },
+
+  {
+    title: "Save final context",
+    task: (context) => writeContext(context, "completed"),
   },
 ]);
 
@@ -64,7 +75,7 @@ async function setupContext(context) {
     commandLineOptions.useContext,
     'utf8'
   );
-  console.log('Loading context', contextJSON);
+  console.log('Loading context')
   const fetchedContext = JSON.parse(contextJSON);
   Object.entries(fetchedContext).forEach(([key, value]) => {
     context[key] = value;
