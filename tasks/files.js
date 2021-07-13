@@ -1,5 +1,6 @@
 import Listr from "listr";
 import { apiV8, apiV9 } from "../api.js";
+import { writeContext } from "../index.js";
 
 export async function migrateFiles(context) {
 	return new Listr([
@@ -11,6 +12,10 @@ export async function migrateFiles(context) {
 			title: "Uploading Files",
 			task: uploadFiles,
 		},
+		{
+      title: "Saving context",
+      task: () => writeContext(context, "files")
+    },
 	]);
 }
 
