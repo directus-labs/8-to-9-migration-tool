@@ -158,7 +158,7 @@ function migrateCollection(collection) {
           type:
             details.datatype?.toLowerCase() === "text" || details.datatype?.toLowerCase() === "longtext"
               ? "text"
-              : typeMap[details.type.toLowerCase()],
+              : details.interface === "many-to-many" ? "m2m" : typeMap[details.type.toLowerCase()],
           meta: {
             note: details.note,
             interface: interfaceMap[(details.interface || "").toLowerCase()],
@@ -192,7 +192,11 @@ function migrateCollection(collection) {
         };
       }),
     };
+<<<<<<< HEAD
 
+=======
+    context.collectionsV9.push(collectionV9);
+>>>>>>> bc68dee... Adjust behavior of m2m fields during collection creation
     await apiV9.post("/collections", collectionV9);
   };
 
@@ -209,7 +213,7 @@ function migrateCollection(collection) {
   }
 
   function extractSpecial(details) {
-    const type = details.type.toLowerCase();
+    const type = details.interface === "many-to-many" ? "m2m" : details.type.toLowerCase();
     if (type === "alias") {
       return ["alias", "no-data"];
     }
@@ -252,6 +256,10 @@ function migrateCollection(collection) {
 
     if (type === "o2m") {
       return ["o2m"];
+    }
+
+    if (type === "m2m") {
+      return ["m2m"];
     }
 
     if (type === "m2o") {
