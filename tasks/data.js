@@ -29,9 +29,38 @@ async function getCounts(context) {
 	}
 }
 
+// This is definitely a hack to achieve first adding items of collections that have dependencies in other collections i.e m2m, o2m
+// FIXME: Implement a more robust solution to sort collections based on their dependencies, or swap to a different way to seed the data
+function moveJunctionCollectionsBack(a,b) {
+	if (a.note === "Junction Collection" || b.note === "Junction Collection") {
+		if (a.note === "Junction Collection") {
+			return 1;
+		}
+
+		if (b.note === "Junction Collection") {
+			return -1;
+		}
+	}
+
+	return 0;
+}
+
+function moveManyToOne(a,b) {
+	if ( Object.values(a.fields).find(element => element.interface === 'many-to-one') ) {
+		return 1;
+	}
+
+	if ( Object.values(b.fields).find(element => element.interface === 'many-to-one') ) {
+		return -1;
+	}
+
+	return 0;
+}
+
 async function insertData(context) {
+	let sortedCollections = context.collections.sort(moveManyToOne).sort(moveJunctionCollectionsBack);
 	return new Listr(
-		context.collections.map((collection) => ({
+		sortedCollections.map((collection) => ({
 			title: collection.collection,
 			task: insertCollection(collection),
 		}))
@@ -102,6 +131,7 @@ async function insertBatch(collection, page, context, task) {
 		}
 	} catch (err) {
 		console.log(err.response.data);
+		throw Error("Data migration failed. Check directus logs for most insight.")
 	}
 }
 
