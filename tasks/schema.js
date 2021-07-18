@@ -156,9 +156,14 @@ function migrateCollection(collection) {
         return {
           field: details.field,
           type:
-            details.datatype?.toLowerCase() === "text" || details.datatype?.toLowerCase() === "longtext"
+            details.datatype?.toLowerCase() === "text" ||
+            details.datatype?.toLowerCase() === "longtext"
               ? "text"
-              : details.interface === "many-to-many" ? "m2m" : typeMap[details.type.toLowerCase()],
+              : details.interface === "many-to-many"
+              ? "m2m"
+              : details.field.includes("directus_files_id")
+              ? "uuid"
+              : typeMap[details.type.toLowerCase()],
           meta: {
             note: details.note,
             interface: interfaceMap[(details.interface || "").toLowerCase()],
