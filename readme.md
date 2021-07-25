@@ -1,6 +1,6 @@
 # Migration Tool
 
-Migrate from a v8 instance to v9 instance. 
+Migrate from a v8 instance to v9 instance.
 
 This tool will copy over:
 
@@ -39,9 +39,17 @@ V9_TOKEN="admin"
 ```
 3) Run `npm install`
 4) Run the `index.js` file: `node index.js`
+
+
+### Commandline Options
 ***
-You can exclude collections/database tables from being migrated by using:
+You can exclude collections/database tables from being migrated by using the `-s` or `--skipCollections` flag:
 ```
 node index.js -s <table_name> <another_table_name>
+```
+***
+You can pass a context file to resume from a specific point or to modify the data manually that you want to use for the migration by using the `-c` or `--useContext` flag:
+```
+node index.js -c <path_to_context>
 ```
 ***
