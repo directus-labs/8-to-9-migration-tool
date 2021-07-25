@@ -72,7 +72,7 @@ const tasks = new Listr([
 export async function writeContext(context, section) {
   context.completedSteps[section] = true;
   await fs.promises.writeFile(
-    `./context/${section}.json`,
+    `./context/state/${section}.json`,
     JSON.stringify(context)
   );
 }

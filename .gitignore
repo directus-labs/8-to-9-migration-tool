@@ -6,11 +6,4 @@ temp.json
 
 
 # Ignore context files except start
-context/collections.json
-context/data.json
-context/files.json
-context/relations.json
-context/roles.json
-context/schema.json
-context/users.json
-context/completed.json
+context/state/*
