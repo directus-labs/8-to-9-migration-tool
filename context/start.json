@@ -5,6 +5,7 @@
     "files": false,
     "roles": false,
     "users": false,
+    "relationsv8": false,
     "relations": false,
     "data": false,
     "completed": false

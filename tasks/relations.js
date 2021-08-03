@@ -5,19 +5,36 @@ import { writeContext } from "../index.js";
 export async function migrateRelations(context) {
   return new Listr([
     {
+      title: "Get v8 Relations",
+      task: () => getRelationsData(context),
+      skip: (context) => context.completedSteps.relationsv8 === true,
+    },
+    {
+      title: "Saving Relations context",
+      task: () => writeContext(context, "relationsv8"),
+      skip: (context) => context.completedSteps.relationsv8 === true,
+    },
+    {
       title: "Migrating Relations",
       task: () => migrateRelationsData(context),
+      skip: (context) => context.completedSteps.relations === true,
     },
     {
       title: "Saving Relations context",
       task: () => writeContext(context, "relations"),
+      skip: (context) => context.completedSteps.relations === true,
     },
   ]);
 }
 
-async function migrateRelationsData(context) {
+async function getRelationsData(context) {
   const relations = await apiV8.get("/relations", { params: { limit: -1 } });
-  const relationsV9 = relations.data.data
+  context.relationsV8 = relations.data.data;
+}
+
+async function migrateRelationsData(context) {
+
+  const relationsV9 = context.relationsV8
     .filter((relation) => {
       return (
         (relation.collection_many.startsWith("directus_") &&

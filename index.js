@@ -54,7 +54,9 @@ const tasks = new Listr([
   },
   {
     title: "Migrating Relations",
-    skip: (context) => context.completedSteps.relations === true,
+    skip: (context) =>
+      context.completedSteps.relationsv8 === true &&
+      context.completedSteps.relations === true,
     task: migrateRelations,
   },
   {
