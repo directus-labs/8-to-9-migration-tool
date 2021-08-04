@@ -3,3 +3,7 @@ node_modules
 .vscode
 .env
 temp.json
+
+
+# Ignore context files except start
+context/state/*

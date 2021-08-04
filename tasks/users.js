@@ -1,24 +1,39 @@
 import Listr from "listr";
 import { apiV8, apiV9 } from "../api.js";
+import { writeContext } from "../index.js";
 
 export async function migrateUsers(context) {
 	return new Listr([
 		{
 			title: "Downloading Roles",
+			skip: context => context.completedSteps.roles === true,
 			task: downloadRoles,
 		},
 		{
 			title: "Creating Roles",
+			skip: context => context.completedSteps.roles === true,
 			task: createRoles,
 		},
 		{
+      title: "Saving Roles context",
+			skip: context => context.completedSteps.roles === true,
+      task: () => writeContext(context, "roles"),
+    },
+		{
 			title: "Downloading Users",
+			skip: context => context.completedSteps.users === true,
 			task: downloadUsers,
 		},
 		{
 			title: "Creating Users",
+			skip: context => context.completedSteps.users === true,
 			task: createUsers,
 		},
+		{
+      title: "Saving users context",
+			skip: context => context.completedSteps.users === true,
+			task: () => writeContext(context, "users"),
+    },
 	]);
 }
 
