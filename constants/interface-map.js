@@ -41,7 +41,7 @@ export const interfaceMap = {
    'slider': 'slider',
    'slug': 'input',
    'sort': 'input',
-   'status': 'select-dropdown',
+   'status': 'select-radio',
    'switch': 'boolean',
    'tags': 'tags',
    'text-input': 'input',
