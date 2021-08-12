@@ -52,5 +52,5 @@ export const interfaceMap = {
    'user-roles': null,
    'user-updated': 'select-dropdown-m2o',
    'user': 'select-dropdown-m2o',
-   'wysiwyg': 'input-richt-text-html',
+   'wysiwyg': 'input-rich-text-html',
 }
