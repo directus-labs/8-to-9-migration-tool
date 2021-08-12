@@ -29,15 +29,41 @@ async function getCounts(context) {
 	}
 }
 
+function isJunctionCollection(note) {
+	const junctionCollectionNames = [
+		"連接點集合",
+		"交叉集合",
+		"中継コレクション",
+		"Узловая Коллекция",
+		"Verbindingscollectie",
+		"Verbindungssammlung",
+		"Збірна колекція",
+		"Spojovací kategorie",
+		"Junction Collection",
+		"Pengumpulan Persimpangan",
+		"Kesişim Koleksiyonu",
+		"مجموعة تلاقي",
+		"Kolekcja Junction",
+		"Jução da coleção",
+		"Koleksi Persimpangan",
+		"Collezione Junction",
+		"Colección de empalme",
+		"Collection de jonction",
+		"Colección de unión",
+	];
+
+	return junctionCollectionNames.includes(note);
+}
+
 // This is definitely a hack to achieve first adding items of collections that have dependencies in other collections i.e m2m, o2m
 // FIXME: Implement a more robust solution to sort collections based on their dependencies, or swap to a different way to seed the data
 function moveJunctionCollectionsBack(a,b) {
-	if (a.note === "Junction Collection" || b.note === "Junction Collection") {
-		if (a.note === "Junction Collection") {
+	if (isJunctionCollection(a.note) || isJunctionCollection(b.note)) {
+		if (isJunctionCollection(a.note)) {
 			return 1;
 		}
 
-		if (b.note === "Junction Collection") {
+		if (isJunctionCollection(b.note)) {
 			return -1;
 		}
 	}
