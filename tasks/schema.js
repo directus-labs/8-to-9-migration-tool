@@ -109,6 +109,29 @@ function migrateFieldOptions(fieldDetails) {
     };
   }
 
+
+  if (fieldDetails.interface === "many-to-one") {
+    let obj = {};
+    if (fieldDetails.options.template) {
+      obj.template = fieldDetails.options.template;
+    }
+    return obj || null;
+  }
+
+  if (fieldDetails.interface === "many-to-many") {
+    let obj = {};
+    if (fieldDetails.options.template) {
+      let templateWithoutBraces = fieldDetails.options.template.replace('{{', '').replace('}}', '').trim();
+      obj.template = "{{"+ fieldDetails.field + "_id." + templateWithoutBraces + "}}";
+    }
+    if (fieldDetails.options.allow_create) {
+      obj.enableCreate = fieldDetails.options.allow_create;
+    }
+    if (fieldDetails.options.allow_select) {
+      obj.enableSelect = fieldDetails.options.allow_select;
+    }
+    return obj || null;
+  }
 }
 
 function migrateCollection(collection, context) {
