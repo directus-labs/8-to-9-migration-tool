@@ -109,6 +109,9 @@ function migrateFieldOptions(fieldDetails) {
     };
   }
 
+  if (fieldDetails.interface === "input-rich-text-html") {
+    return fieldDetails.options;
+  }
 
   if (fieldDetails.interface === "many-to-one") {
     let obj = {};
