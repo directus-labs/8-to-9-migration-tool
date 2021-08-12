@@ -83,8 +83,27 @@ function moveManyToOne(a,b) {
 	return 0;
 }
 
+function moveByCustomOrder(collectionOrder) {
+	return (a, b) => {
+		return collectionOrder.indexOf(a.collection) - collectionOrder.indexOf(b.collection);
+	}
+}
+
 async function insertData(context) {
-	let sortedCollections = context.collections.sort(moveManyToOne).sort(moveJunctionCollectionsBack);
+	let sortedCollections;
+
+	if (process.env.COLLECTION_ORDER) {
+		const collectionOrder = process.env.COLLECTION_ORDER
+			.split(',')
+			.map(entry => entry.trim());
+		sortedCollections = context.collections
+			.sort(moveByCustomOrder(collectionOrder))
+	} else {
+		sortedCollections = context.collections
+			.sort(moveManyToOne)
+			.sort(moveJunctionCollectionsBack)
+	}
+
 	return new Listr(
 		sortedCollections.map((collection) => ({
 			title: collection.collection,

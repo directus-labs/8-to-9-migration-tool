@@ -53,3 +53,11 @@ You can pass a context file to resume from a specific point or to modify the dat
 node index.js -c <path_to_context>
 ```
 ***
+
+### Specifying collection dependencies
+If the default detection of the dependencies between collections doesn't work in your case, you can manually specify it with the env variable `COLLECTION_ORDER`. Just supply a comma separated list in which order you'd need the data of your collections to be imported.
+
+```
+COLLECTION_ORDER="first_collection,second_collection,third_collection"
+```
+***
