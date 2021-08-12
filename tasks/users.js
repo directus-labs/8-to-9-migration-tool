@@ -104,7 +104,7 @@ async function createUsers(context) {
 	context.userMap = {};
 
 	context.users.forEach((user, index) => {
-		context.userMap[user.id] = createdUsers.data.data[index].id;
+		context.userMap[user.id] = createdUsersAsArray[index].id;
 	});
 
 	context.users = createdUsers.data.data;
