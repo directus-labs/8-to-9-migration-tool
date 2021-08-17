@@ -57,14 +57,19 @@ function uploadBatch(page) {
 
 		for (const fileRecord of records.data.data) {
 			task.output = fileRecord.filename_download;
-
-			const savedFile = await apiV9.post("/files/import", {
-				url:
-					process.env.V8_URL +
+			let url;
+			if (fileRecord.data.asset_url) {
+				url = process.env.V8_URL +
 					"/" +
 					process.env.V8_PROJECT_NAME +
 					"/" +
-					fileRecord.data.asset_url.split("/").slice(2).join("/"),
+					fileRecord.data.asset_url.split("/").slice(2).join("/");
+			} else {
+				url = fileRecord.data.full_url;
+			}
+
+			const savedFile = await apiV9.post("/files/import", {
+				url,
 				data: {
 					filename_download: fileRecord.filename_download,
 					title: fileRecord.title,
