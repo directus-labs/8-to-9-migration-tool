@@ -151,8 +151,10 @@ async function insertBatch(collection, page, context, task) {
 		);
 	});
 
+	const datetimeFields = Object.values(collection.fields).filter(field => field.type === 'datetime')
+
 	const itemRecords =
-		systemRelationsForCollection.length === 0
+		systemRelationsForCollection.length === 0 && datetimeFields.length === 0
 			? recordsResponse.data.data
 			: recordsResponse.data.data.map((item) => {
 					for (const systemRelation of systemRelationsForCollection) {
@@ -163,6 +165,10 @@ async function insertBatch(collection, page, context, task) {
 							item[systemRelation?.meta?.many_field] =
 								context.fileMap[item[systemRelation?.meta?.many_field]];
 						}
+					}
+
+					for (const datetimeField of datetimeFields) {
+						item[datetimeField.field] = new Date(item[datetimeField.field]).toISOString();
 					}
 
 					return item;
