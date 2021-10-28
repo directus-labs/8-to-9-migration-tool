@@ -78,7 +78,27 @@ function migrateFieldOptions(fieldDetails) {
       placeholder: fieldDetails.options.placeholder,
     };
   }
-
+  
+  if (fieldDetails.interface === "repeater" && fieldDetails.options.dataType === "object") {
+    const fieldKeys = Object.keys(fieldDetails.options.fields)
+    const fields = fieldDetails.options.fields
+    return {
+      fields: fieldKeys.map((field) => ({
+        name: field,
+        type: fields[field].type,
+        field: field,
+        meta: {
+          name: field,
+          type: fields[field].type,
+          field: field,
+          width: fields[field].width,
+          interface: fields[field].interface,
+          options: migrateFieldOptions(field),
+        },
+      })),
+    };
+  }
+  
   if (fieldDetails.interface === "repeater") {
     return {
       fields: fieldDetails.options.fields.map((field) => ({
