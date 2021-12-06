@@ -164,6 +164,9 @@ async function insertBatch(collection, page, context, task) {
 						} else if (systemRelation?.meta?.one_collection === "directus_files") {
 							item[systemRelation?.meta?.many_field] =
 								context.fileMap[item[systemRelation?.meta?.many_field]];
+						} else if (systemRelation?.meta?.one_collection === "directus_roles") {
+							item[systemRelation?.meta?.many_field] =
+								context.roleMap[item[systemRelation?.meta?.many_field]];
 						}
 					}
 
