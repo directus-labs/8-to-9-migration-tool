@@ -74,7 +74,12 @@ async function createRoles(context) {
 }
 
 async function downloadUsers(context) {
-	const response = await apiV8.get("/users");
+	const response = await apiV8.get("/users", {
+		params: {
+			limit: -1,
+			status: '*',
+		}
+	});
 	context.users = response.data.data;
 }
 

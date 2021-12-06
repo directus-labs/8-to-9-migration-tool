@@ -203,7 +203,7 @@ function migrateCollection(collection, context) {
               ? "text"
               : details.interface === "many-to-many"
               ? "m2m"
-              : details.field.includes("directus_files_id")
+              : details.field.includes("directus_files_id") || details.interface === 'user-roles'
               ? "uuid"
               : typeMap[details.type.toLowerCase()],
           meta: {
