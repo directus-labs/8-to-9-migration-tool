@@ -18,14 +18,29 @@ async function getCounts(context) {
 	context.counts = {};
 
 	for (const collection of context.collections) {
+		const contextCollection = context.collectionsV9.find(c => c.collection === collection.collection)
+
+		let hasStatus = false
+		const params = {
+			limit: 1,
+			meta: "total_count",
+		}
+
+		if (contextCollection && contextCollection?.meta?.archive_value) {
+			hasStatus = true
+			params.meta = '*'
+		}
+
 		const count = await apiV8.get(`/items/${collection.collection}`, {
-			params: {
-				limit: 1,
-				meta: "total_count",
-			},
+			params,
 		});
 
-		context.counts[collection.collection] = count.data.meta.total_count;
+		if (hasStatus) {
+			context.counts[collection.collection] = Object.keys(count.data.meta.status_count)
+				.reduce((acc, cur) => acc + count.data.meta.status_count[cur], 0);
+		} else {
+			context.counts[collection.collection] = count.data.meta.total_count;
+		}
 	}
 }
 
@@ -126,13 +141,22 @@ function insertCollection(collection) {
 }
 
 async function insertBatch(collection, page, context, task) {
-	const getRecordsResponse = () =>
-		apiV8.get(`/items/${collection.collection}`, {
-			params: {
-				offset: page * 100,
-				limit: 100,
-			},
+	const contextCollection = context.collectionsV9.find(c => c.collection === collection.collection)
+
+	const getRecordsResponse = () => {
+		const params = {
+			offset: page * 100,
+			limit: 100,
+		}
+
+		if (contextCollection && contextCollection?.meta?.archive_value) {
+			params.status = '*'
+		}
+
+		return apiV8.get(`/items/${collection.collection}`, {
+			params,
 		});
+	}
 
 	let recordsResponse;
 
