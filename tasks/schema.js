@@ -243,7 +243,7 @@ function migrateCollection(collection, context) {
     try {
       await apiV9.post("/collections", collectionV9);
     } catch (err) {
-      console.error(collectionV9.collection, err.response?.data);
+      console.error(`Error migrating schema for collection [${collectionV9.collection}], response: ${JSON.stringify(err.response?.data, null, 2)}`);
       if (!context.allowFailures) {
         throw Error("Schema migration failed. Check directus logs for most insight.")
       }

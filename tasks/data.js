@@ -208,7 +208,7 @@ async function insertBatch(collection, page, context, task) {
 			await apiV9.post(`/items/${collection.collection}`, itemRecords);
 		}
 	} catch (err) {
-		console.error(collection.collection, err.response?.data);
+		console.error(`Error migrating data for collection [${collection.collection}], response: ${JSON.stringify(err.response?.data, null, 2)}`);
     if (!context.allowFailures) {
       throw Error("Data migration failed. Check directus logs for most insight.")
     }
