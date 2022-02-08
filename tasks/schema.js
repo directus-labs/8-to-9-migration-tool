@@ -185,7 +185,7 @@ function migrateCollection(collection, context) {
               archive_field: statusField.field,
               archive_value: Object.values(
                 statusField.options.status_mapping
-              ).find((option) => option.soft_delete).value,
+              ).find((option) => option.soft_delete)?.value,
               unarchive_value: Object.values(
                 statusField.options.status_mapping
               ).find((option) => !option.soft_delete && !option.published)
