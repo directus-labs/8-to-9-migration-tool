@@ -209,7 +209,9 @@ async function insertBatch(collection, page, context, task) {
 		}
 	} catch (err) {
 		console.log(err.response.data);
-		throw Error("Data migration failed. Check directus logs for most insight.")
+    if (!context.allowFailures) {
+      throw Error("Data migration failed. Check directus logs for most insight.")
+    }
 	}
 }
 

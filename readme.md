@@ -40,6 +40,7 @@ V9_TOKEN="admin"
 3) Run `npm install`
 4) Run the `index.js` file: `node index.js`
 
+Note: If you want to save the error logs to a folder, you can redirect the error output `node index.js 2> errors.txt`
 
 ### Commandline Options
 ***
@@ -51,6 +52,11 @@ node index.js -s <table_name> <another_table_name>
 You can pass a context file to resume from a specific point or to modify the data manually that you want to use for the migration by using the `-c` or `--useContext` flag:
 ```
 node index.js -c <path_to_context>
+```
+***
+You can allow errors to occur during the migration by using the `-l` or `--allowFailures` flag:
+```
+node index.js -l
 ```
 ***
 

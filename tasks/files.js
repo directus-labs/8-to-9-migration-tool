@@ -68,16 +68,23 @@ function uploadBatch(page) {
 				url = fileRecord.data.full_url;
 			}
 
-			const savedFile = await apiV9.post("/files/import", {
-				url,
-				data: {
-					filename_download: fileRecord.filename_download,
-					title: fileRecord.title,
-					description: fileRecord.description,
-				},
-			});
+      try {
+        const savedFile = await apiV9.post("/files/import", {
+          url,
+          data: {
+            filename_download: fileRecord.filename_download,
+            title: fileRecord.title,
+            description: fileRecord.description,
+          },
+        });
 
-			context.fileMap[fileRecord.id] = savedFile.data.data.id;
+        context.fileMap[fileRecord.id] = savedFile.data.data.id;
+      } catch (err) {
+        console.log(err.response.data);
+        if (!context.allowFailures) {
+          throw Error("File migration failed. Check directus logs for most insight.")
+        }
+      }
 		}
 	};
 }

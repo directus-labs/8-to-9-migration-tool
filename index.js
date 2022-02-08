@@ -23,6 +23,13 @@ const commandLineOptions = commandLineArgs([
     multiple: false,
     defaultValue: "./context/start.json",
   },
+  {
+    name: "allowFailures",
+    alias: "l",
+    type: Boolean,
+    multiple: false,
+    defaultValue: false,
+  },
 ]);
 
 const tasks = new Listr([
@@ -80,6 +87,7 @@ export async function writeContext(context, section) {
 }
 
 async function setupContext(context) {
+  context.allowFailures = commandLineOptions.allowFailures
   const contextJSON = await fs.promises.readFile(
     commandLineOptions.useContext,
     "utf8"

@@ -78,7 +78,7 @@ function migrateFieldOptions(fieldDetails) {
       placeholder: fieldDetails.options.placeholder,
     };
   }
-  
+
   if (fieldDetails.interface === "repeater" && fieldDetails.options.dataType === "object") {
     const fieldKeys = Object.keys(fieldDetails.options.fields)
     const fields = fieldDetails.options.fields
@@ -98,7 +98,7 @@ function migrateFieldOptions(fieldDetails) {
       })),
     };
   }
-  
+
   if (fieldDetails.interface === "repeater") {
     return {
       fields: fieldDetails.options.fields.map((field) => ({
@@ -240,7 +240,14 @@ function migrateCollection(collection, context) {
       }),
     };
     context.collectionsV9.push(collectionV9);
-    await apiV9.post("/collections", collectionV9);
+    try {
+      await apiV9.post("/collections", collectionV9);
+    } catch (err) {
+      console.log(err.response.data);
+      if (!context.allowFailures) {
+        throw Error("Schema migration failed. Check directus logs for most insight.")
+      }
+    }
   };
 
   function extractValue(details) {
