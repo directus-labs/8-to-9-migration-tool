@@ -80,7 +80,7 @@ function uploadBatch(page) {
 
         context.fileMap[fileRecord.id] = savedFile.data.data.id;
       } catch (err) {
-        console.log(err.response.data);
+        console.error(fileRecord.id, err.response?.data);
         if (!context.allowFailures) {
           throw Error("File migration failed. Check directus logs for most insight.")
         }
