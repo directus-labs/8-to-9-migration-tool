@@ -18,17 +18,19 @@ async function getCounts(context) {
 	context.counts = {};
 
 	for (const collection of context.collections) {
-		const contextCollection = context.collectionsV9.find(c => c.collection === collection.collection)
+		const contextCollection = context.collectionsV9.find(
+			(c) => c.collection === collection.collection
+		);
 
-		let hasStatus = false
+		let hasStatus = false;
 		const params = {
 			limit: 1,
 			meta: "total_count",
-		}
+		};
 
 		if (contextCollection && contextCollection?.meta?.archive_value) {
-			hasStatus = true
-			params.meta = '*'
+			hasStatus = true;
+			params.meta = "*";
 		}
 
 		const count = await apiV8.get(`/items/${collection.collection}`, {
@@ -36,8 +38,9 @@ async function getCounts(context) {
 		});
 
 		if (hasStatus) {
-			context.counts[collection.collection] = Object.keys(count.data.meta.status_count)
-				.reduce((acc, cur) => acc + count.data.meta.status_count[cur], 0);
+			context.counts[collection.collection] = Object.keys(
+				count.data.meta.status_count
+			).reduce((acc, cur) => acc + count.data.meta.status_count[cur], 0);
 		} else {
 			context.counts[collection.collection] = count.data.meta.total_count;
 		}
@@ -72,7 +75,7 @@ function isJunctionCollection(note) {
 
 // This is definitely a hack to achieve first adding items of collections that have dependencies in other collections i.e m2m, o2m
 // FIXME: Implement a more robust solution to sort collections based on their dependencies, or swap to a different way to seed the data
-function moveJunctionCollectionsBack(a,b) {
+function moveJunctionCollectionsBack(a, b) {
 	if (isJunctionCollection(a.note) || isJunctionCollection(b.note)) {
 		if (isJunctionCollection(a.note)) {
 			return 1;
@@ -86,12 +89,20 @@ function moveJunctionCollectionsBack(a,b) {
 	return 0;
 }
 
-function moveManyToOne(a,b) {
-	if ( Object.values(a.fields).find(element => element.interface === 'many-to-one') ) {
+function moveManyToOne(a, b) {
+	if (
+		Object.values(a.fields).find(
+			(element) => element.interface === "many-to-one"
+		)
+	) {
 		return 1;
 	}
 
-	if ( Object.values(b.fields).find(element => element.interface === 'many-to-one') ) {
+	if (
+		Object.values(b.fields).find(
+			(element) => element.interface === "many-to-one"
+		)
+	) {
 		return -1;
 	}
 
@@ -100,23 +111,27 @@ function moveManyToOne(a,b) {
 
 function moveByCustomOrder(collectionOrder) {
 	return (a, b) => {
-		return collectionOrder.indexOf(a.collection) - collectionOrder.indexOf(b.collection);
-	}
+		return (
+			collectionOrder.indexOf(a.collection) -
+			collectionOrder.indexOf(b.collection)
+		);
+	};
 }
 
 async function insertData(context) {
 	let sortedCollections;
 
 	if (process.env.COLLECTION_ORDER) {
-		const collectionOrder = process.env.COLLECTION_ORDER
-			.split(',')
-			.map(entry => entry.trim());
-		sortedCollections = context.collections
-			.sort(moveByCustomOrder(collectionOrder))
+		const collectionOrder = process.env.COLLECTION_ORDER.split(",").map(
+			(entry) => entry.trim()
+		);
+		sortedCollections = context.collections.sort(
+			moveByCustomOrder(collectionOrder)
+		);
 	} else {
 		sortedCollections = context.collections
 			.sort(moveManyToOne)
-			.sort(moveJunctionCollectionsBack)
+			.sort(moveJunctionCollectionsBack);
 	}
 
 	return new Listr(
@@ -141,22 +156,24 @@ function insertCollection(collection) {
 }
 
 async function insertBatch(collection, page, context, task) {
-	const contextCollection = context.collectionsV9.find(c => c.collection === collection.collection)
+	const contextCollection = context.collectionsV9.find(
+		(c) => c.collection === collection.collection
+	);
 
 	const getRecordsResponse = () => {
 		const params = {
 			offset: page * 100,
 			limit: 100,
-		}
+		};
 
 		if (contextCollection && contextCollection?.meta?.archive_value) {
-			params.status = '*'
+			params.status = "*";
 		}
 
 		return apiV8.get(`/items/${collection.collection}`, {
 			params,
 		});
-	}
+	};
 
 	let recordsResponse;
 
@@ -175,7 +192,9 @@ async function insertBatch(collection, page, context, task) {
 		);
 	});
 
-	const datetimeFields = Object.values(collection.fields).filter(field => field.type === 'datetime')
+	const datetimeFields = Object.values(collection.fields).filter(
+		(field) => field.type === "datetime"
+	);
 
 	const itemRecords =
 		systemRelationsForCollection.length === 0 && datetimeFields.length === 0
@@ -185,17 +204,23 @@ async function insertBatch(collection, page, context, task) {
 						if (systemRelation?.meta?.one_collection === "directus_users") {
 							item[systemRelation?.meta?.many_field] =
 								context.userMap[item[systemRelation?.meta?.many_field]];
-						} else if (systemRelation?.meta?.one_collection === "directus_files") {
+						} else if (
+							systemRelation?.meta?.one_collection === "directus_files"
+						) {
 							item[systemRelation?.meta?.many_field] =
 								context.fileMap[item[systemRelation?.meta?.many_field]];
-						} else if (systemRelation?.meta?.one_collection === "directus_roles") {
+						} else if (
+							systemRelation?.meta?.one_collection === "directus_roles"
+						) {
 							item[systemRelation?.meta?.many_field] =
 								context.roleMap[item[systemRelation?.meta?.many_field]];
 						}
 					}
 
 					for (const datetimeField of datetimeFields) {
-						item[datetimeField.field] = new Date(item[datetimeField.field]).toISOString();
+						item[datetimeField.field] = new Date(
+							item[datetimeField.field]
+						).toISOString();
 					}
 
 					return item;
@@ -208,8 +233,16 @@ async function insertBatch(collection, page, context, task) {
 			await apiV9.post(`/items/${collection.collection}`, itemRecords);
 		}
 	} catch (err) {
-		console.log(err.response.data);
-		throw Error("Data migration failed. Check directus logs for most insight.")
+		console.error(
+			`Error migrating data for collection [${
+				collection.collection
+			}], response: ${JSON.stringify(err.response?.data, null, 2)}`
+		);
+		if (!context.allowFailures) {
+			throw Error(
+				"Data migration failed. Check directus logs for most insight."
+			);
+		}
 	}
 }
 

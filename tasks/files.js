@@ -13,9 +13,9 @@ export async function migrateFiles(context) {
 			task: uploadFiles,
 		},
 		{
-      title: "Saving context",
-      task: () => writeContext(context, "files")
-    },
+			title: "Saving context",
+			task: () => writeContext(context, "files"),
+		},
 	]);
 }
 
@@ -59,7 +59,8 @@ function uploadBatch(page) {
 			task.output = fileRecord.filename_download;
 			let url;
 			if (fileRecord.data.asset_url) {
-				url = process.env.V8_URL +
+				url =
+					process.env.V8_URL +
 					"/" +
 					process.env.V8_PROJECT_NAME +
 					"/" +
@@ -68,16 +69,29 @@ function uploadBatch(page) {
 				url = fileRecord.data.full_url;
 			}
 
-			const savedFile = await apiV9.post("/files/import", {
-				url,
-				data: {
-					filename_download: fileRecord.filename_download,
-					title: fileRecord.title,
-					description: fileRecord.description,
-				},
-			});
+			try {
+				const savedFile = await apiV9.post("/files/import", {
+					url,
+					data: {
+						filename_download: fileRecord.filename_download,
+						title: fileRecord.title,
+						description: fileRecord.description,
+					},
+				});
 
-			context.fileMap[fileRecord.id] = savedFile.data.data.id;
+				context.fileMap[fileRecord.id] = savedFile.data.data.id;
+			} catch (err) {
+				console.error(
+					`Error migrating file with id [${
+						fileRecord.id
+					}], response: ${JSON.stringify(err.response?.data, null, 2)}`
+				);
+				if (!context.allowFailures) {
+					throw Error(
+						"File migration failed. Check directus logs for most insight."
+					);
+				}
+			}
 		}
 	};
 }
