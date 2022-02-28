@@ -23,7 +23,7 @@
     "dotenv": "^8.2.0"
   },
   "dependencies": {
-    "axios": "^0.21.1",
+    "axios": "^0.21.2",
     "command-line-args": "^5.1.1",
     "listr": "^0.14.3"
   },
