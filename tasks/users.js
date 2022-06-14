@@ -67,7 +67,7 @@ async function createRoles(context) {
 		createdRolesAsArray = [createdRolesAsArray];
 
 	context.roles.forEach((role, index) => {
-		context.roleMap[role.id] = createdRolesAsArray[index].id;
+		context.roleMap[role.id] = createdRolesAsArray.find(r => r.name == role.name).id;
 	});
 
 	context.roles = createdRolesAsArray;
@@ -109,7 +109,7 @@ async function createUsers(context) {
 	context.userMap = {};
 
 	context.users.forEach((user, index) => {
-		context.userMap[user.id] = createdUsersAsArray[index].id;
+		context.userMap[user.id] = createdUsersAsArray.find(u => u.email == user.email).id;
 	});
 
 	context.users = createdUsers.data.data;
