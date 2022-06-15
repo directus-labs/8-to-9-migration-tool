@@ -59,7 +59,7 @@ async function migrateRelationsData(context) {
     .map((collection) =>
       Object.values(collection.fields)
         .filter((details) => {
-          return details.type === "file" || details.type.startsWith("user");
+          return details.type === "file" || details.type.startsWith("user") || details.type === "owner";
         })
         .map((field) => ({
           meta: {
