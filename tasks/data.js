@@ -144,7 +144,7 @@ async function insertData(context) {
 
 function insertCollection(collection) {
 	return async (context, task) => {
-		const pages = Math.ceil(context.counts[collection.collection] / 100);
+    const pages = Math.ceil(context.counts[collection.collection] / 10);
 
 		for (let i = 0; i < pages; i++) {
 			task.output = `Inserting items ${i * 100 + 1}—${(i + 1) * 100}/${
