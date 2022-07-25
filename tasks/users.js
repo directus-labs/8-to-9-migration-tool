@@ -67,7 +67,9 @@ async function createRoles(context) {
 		createdRolesAsArray = [createdRolesAsArray];
 
 	context.roles.forEach((role, index) => {
-		context.roleMap[role.id] = createdRolesAsArray.find(r => r.name == role.name).id;
+    context.roleMap[role.id] = createdRolesAsArray.find(
+      (r) => r.name == role.name
+    ).id;
 	});
 
 	context.roles = createdRolesAsArray;
@@ -77,14 +79,22 @@ async function downloadUsers(context) {
 	const response = await apiV8.get("/users", {
 		params: {
 			limit: -1,
-			status: '*',
-		}
+      status: "*",
+    },
 	});
 	context.users = response.data.data;
 }
 
 async function createUsers(context) {
-	const usersV9 = context.users.map((user) => ({
+  let createdUsersAsArray = [];
+  let chunk = [];
+  let offset = 0;
+  const size = 10;
+
+  do {
+    chunk = context.users.slice(offset * size, (offset + 1) * size);
+
+    const usersV9 = chunk.map((user) => ({
 		first_name: user.first_name,
 		last_name: user.last_name,
 		email: user.email,
@@ -97,20 +107,27 @@ async function createUsers(context) {
 		token: user.token,
 	}));
 
-	const createdUsers = await apiV9.post("/users", usersV9, {
+    try {
+      const response = await apiV9.post("/users", usersV9, {
 		params: { limit: -1 },
 	});
 
-	let createdUsersAsArray = createdUsers.data.data;
+      const createdUsers = response.data.data;
+      offset++;
 
-	if (Array.isArray(createdUsersAsArray) === false)
-		createdUsersAsArray = [createdUsersAsArray];
+      createdUsersAsArray = createdUsersAsArray.concat(createdUsers);
+    } catch (error) {
+      console.error(error.response);
+    }
+  } while (chunk.length === 10);
 
 	context.userMap = {};
 
 	context.users.forEach((user, index) => {
-		context.userMap[user.id] = createdUsersAsArray.find(u => u.email == user.email).id;
+    context.userMap[user.id] = createdUsersAsArray.find(
+      (u) => u.email == user.email
+    ).id;
 	});
 
-	context.users = createdUsers.data.data;
+  context.users = createdUsersAsArray;
 }
