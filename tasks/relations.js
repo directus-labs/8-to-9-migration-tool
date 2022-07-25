@@ -3,6 +3,8 @@ import { apiV8, apiV9 } from "../api.js";
 import { writeContext } from "../index.js";
 
 export async function fetchRelations(context) {
+  context.section = "relationsv8";
+
   return new Listr([
     {
       title: "Get v8 Relations",
@@ -11,13 +13,15 @@ export async function fetchRelations(context) {
     },
     {
       title: "Saving Relations context",
-      task: () => writeContext(context, "relationsv8"),
+      task: () => writeContext(context),
       skip: (context) => context.completedSteps.relationsv8 === true,
     },
   ]);
 }
 
 export async function migrateRelations(context) {
+  context.section = "relations";
+
   return new Listr([
     {
       title: "Migrating Relations",
@@ -26,7 +30,7 @@ export async function migrateRelations(context) {
     },
     {
       title: "Saving Relations context",
-      task: () => writeContext(context, "relations"),
+      task: () => writeContext(context),
       skip: (context) => context.completedSteps.relations === true,
     },
   ]);
@@ -53,17 +57,17 @@ async function migrateRelationsData(context) {
 
     return [
       {
-      meta: {
-        many_collection: relation.collection_many,
-        many_field: relation.field_many,
-        one_collection: relation.collection_one,
-        one_field: relation.field_one,
-        junction_field: relation.junction_field,
-      },
-      field: relation.field_many,
-      collection: relation.collection_many,
-      related_collection: relation.collection_one,
-      schema: null,
+        meta: {
+          many_collection: relation.collection_many,
+          many_field: relation.field_many,
+          one_collection: relation.collection_one,
+          one_field: relation.field_one,
+          junction_field: relation.junction_field,
+        },
+        field: relation.field_many,
+        collection: relation.collection_many,
+        related_collection: relation.collection_one,
+        schema: null,
       },
     ];
   });
