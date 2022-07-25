@@ -203,6 +203,17 @@ function migrateCollection(collection, context) {
 			},
 			schema: {},
 			fields: Object.values(collection.fields).map((details) => {
+        const relation =
+          context.relationsV8Map?.[collection.collection]?.[details.field] ||
+          {};
+
+        const isUuid =
+          details.field.includes("directus_files_id") ||
+          details.interface === "user-roles" ||
+          ["directus_files", "directus_users"].includes(
+            relation?.collection_one
+          );
+
 				return {
 					field: details.field,
 					type:
@@ -211,8 +222,7 @@ function migrateCollection(collection, context) {
 							? "text"
 							: details.interface === "many-to-many"
 							? "m2m"
-							: details.field.includes("directus_files_id") ||
-							  details.interface === "user-roles"
+              : isUuid
 							? "uuid"
 							: typeMap[details.type.toLowerCase()],
 					meta: {
