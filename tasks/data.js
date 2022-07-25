@@ -192,8 +192,8 @@ async function insertBatch(collection, page, context, task) {
 		);
 	});
 
-	const datetimeFields = Object.values(collection.fields).filter(
-		(field) => field.type === "datetime"
+  const datetimeFields = Object.values(collection.fields).filter((field) =>
+    ["datetime", "date"].includes(field.type)
 	);
 
   const itemRecords = recordsResponse.data.data.flatMap((item) => {
