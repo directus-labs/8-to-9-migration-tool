@@ -2,7 +2,7 @@ import Listr from "listr";
 import { apiV8, apiV9 } from "../api.js";
 import { writeContext } from "../index.js";
 
-export async function migrateRelations(context) {
+export async function fetchRelations(context) {
   return new Listr([
     {
       title: "Get v8 Relations",
@@ -14,6 +14,11 @@ export async function migrateRelations(context) {
       task: () => writeContext(context, "relationsv8"),
       skip: (context) => context.completedSteps.relationsv8 === true,
     },
+  ]);
+}
+
+export async function migrateRelations(context) {
+  return new Listr([
     {
       title: "Migrating Relations",
       task: () => migrateRelationsData(context),
@@ -30,18 +35,24 @@ export async function migrateRelations(context) {
 async function getRelationsData(context) {
   const relations = await apiV8.get("/relations", { params: { limit: -1 } });
   context.relationsV8 = relations.data.data;
+  context.relationsV8Map = relations.data.data.reduce(
+    (map, relation) => ({
+      ...map,
+      [relation.collection_many]: {
+        ...map[relation.collection_many],
+        [relation.field_many]: relation,
+      },
+    }),
+    {}
+  );
 }
 
 async function migrateRelationsData(context) {
+  const relationsV9 = context.relationsV8.flatMap((relation) => {
+    if (relation.collection_many.startsWith("directus_")) return [];
 
-  const relationsV9 = context.relationsV8
-    .filter((relation) => {
-      return (
-        (relation.collection_many.startsWith("directus_") &&
-          relation.collection_one.startsWith("directus_")) === false
-      );
-    })
-    .map((relation) => ({
+    return [
+      {
       meta: {
         many_collection: relation.collection_many,
         many_field: relation.field_many,
@@ -53,13 +64,19 @@ async function migrateRelationsData(context) {
       collection: relation.collection_many,
       related_collection: relation.collection_one,
       schema: null,
-    }));
+      },
+    ];
+  });
 
   const systemFields = context.collections
     .map((collection) =>
       Object.values(collection.fields)
         .filter((details) => {
-          return details.type === "file" || details.type.startsWith("user") || details.type === "owner";
+          return (
+            details.type === "file" ||
+            details.type.startsWith("user") ||
+            details.type === "owner"
+          );
         })
         .map((field) => ({
           meta: {
@@ -70,7 +87,8 @@ async function migrateRelationsData(context) {
           },
           field: field.field,
           collection: collection.collection,
-          related_collection:  field.type === "file" ? "directus_files" : "directus_users",
+          related_collection:
+            field.type === "file" ? "directus_files" : "directus_users",
           schema: null,
         }))
     )

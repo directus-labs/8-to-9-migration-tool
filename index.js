@@ -6,7 +6,7 @@ import { migrateSchema } from "./tasks/schema.js";
 import { migrateFiles } from "./tasks/files.js";
 import { migrateUsers } from "./tasks/users.js";
 import { migrateData } from "./tasks/data.js";
-import { migrateRelations } from "./tasks/relations.js";
+import { fetchRelations, migrateRelations } from "./tasks/relations.js";
 
 const commandLineOptions = commandLineArgs([
 	{
@@ -38,6 +38,14 @@ const tasks = new Listr([
 		task: setupContext,
 	},
 	{
+    title: "Fetch Relations",
+    skipt: (context) =>
+      context.completedSteps.relationsv8 === true &&
+      context.completedSteps.schema === true &&
+      context.completedSteps.relations === true,
+    task: fetchRelations,
+  },
+  {
 		title: "Migrating Schema",
 		skip: (context) =>
 			context.completedSteps.schema === true &&
