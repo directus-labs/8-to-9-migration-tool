@@ -196,22 +196,23 @@ async function insertBatch(collection, page, context, task) {
 		(field) => field.type === "datetime"
 	);
 
-	const itemRecords =
-		systemRelationsForCollection.length === 0 && datetimeFields.length === 0
-			? recordsResponse.data.data
-			: recordsResponse.data.data.map((item) => {
+  const itemRecords = recordsResponse.data.data.flatMap((item) => {
+    if (context.dataMap?.[collection.collection]?.[item.id]) return [];
+
+    if (
+      systemRelationsForCollection.length === 0 &&
+      datetimeFields.length === 0
+    )
+      return [item];
+
 					for (const systemRelation of systemRelationsForCollection) {
 						if (systemRelation?.meta?.one_collection === "directus_users") {
 							item[systemRelation?.meta?.many_field] =
 								context.userMap[item[systemRelation?.meta?.many_field]];
-						} else if (
-							systemRelation?.meta?.one_collection === "directus_files"
-						) {
+      } else if (systemRelation?.meta?.one_collection === "directus_files") {
 							item[systemRelation?.meta?.many_field] =
 								context.fileMap[item[systemRelation?.meta?.many_field]];
-						} else if (
-							systemRelation?.meta?.one_collection === "directus_roles"
-						) {
+      } else if (systemRelation?.meta?.one_collection === "directus_roles") {
 							item[systemRelation?.meta?.many_field] =
 								context.roleMap[item[systemRelation?.meta?.many_field]];
 						}
@@ -223,9 +224,10 @@ async function insertBatch(collection, page, context, task) {
 						).toISOString();
 					}
 
-					return item;
+    return [item];
 			  });
 
+  if (!itemRecords.length) return;
 	try {
 		if (collection.single === true) {
 			await apiV9.patch(`/items/${collection.collection}`, itemRecords[0]);
