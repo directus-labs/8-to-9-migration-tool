@@ -236,6 +236,7 @@ async function insertBatch(collection, page, context, task) {
     }
 
     for (const datetimeField of datetimeFields) {
+      if (item[datetimeField.field])
       item[datetimeField.field] = new Date(
         item[datetimeField.field]
       ).toISOString();
