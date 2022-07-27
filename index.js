@@ -6,7 +6,8 @@ import { migrateSchema } from "./tasks/schema.js";
 import { migrateFiles } from "./tasks/files.js";
 import { migrateUsers } from "./tasks/users.js";
 import { migrateData } from "./tasks/data.js";
-import { migrateRelations } from "./tasks/relations.js";
+import { fetchRelations, migrateRelations } from "./tasks/relations.js";
+import { writeFile } from "fs/promises";
 
 const commandLineOptions = commandLineArgs([
 	{
@@ -38,6 +39,14 @@ const tasks = new Listr([
 		task: setupContext,
 	},
 	{
+		title: "Fetch Relations",
+		skipt: (context) =>
+			context.completedSteps.relationsv8 === true &&
+			context.completedSteps.schema === true &&
+			context.completedSteps.relations === true,
+		task: fetchRelations,
+	},
+	{
 		title: "Migrating Schema",
 		skip: (context) =>
 			context.completedSteps.schema === true &&
@@ -46,11 +55,6 @@ const tasks = new Listr([
 			context.skipCollections = commandLineOptions.skipCollections;
 			return migrateSchema(context);
 		},
-	},
-	{
-		title: "Migration Files",
-		skip: (context) => context.completedSteps.files === true,
-		task: migrateFiles,
 	},
 	{
 		title: "Migrating Users",
@@ -67,6 +71,11 @@ const tasks = new Listr([
 		task: migrateRelations,
 	},
 	{
+		title: "Migration Files",
+		skip: (context) => context.completedSteps.files === true,
+		task: migrateFiles,
+	},
+	{
 		title: "Migrating Data",
 		skip: (context) => context.completedSteps.data === true,
 		task: migrateData,
@@ -74,19 +83,25 @@ const tasks = new Listr([
 
 	{
 		title: "Save final context",
-		task: (context) => writeContext(context, "completed"),
+		task: (context) => {
+			context.section = "completed";
+			writeContext(context);
+		},
 	},
 ]);
 
-export async function writeContext(context, section) {
-	context.completedSteps[section] = true;
+let ctx = {};
+
+export async function writeContext(context, completed = true) {
+	context.completedSteps[context.section] = completed;
 	await fs.promises.writeFile(
-		`./context/state/${section}.json`,
+		`./context/state/${context.section}.json`,
 		JSON.stringify(context)
 	);
 }
 
 async function setupContext(context) {
+	ctx = context;
 	context.allowFailures = commandLineOptions.allowFailures;
 	const contextJSON = await fs.promises.readFile(
 		commandLineOptions.useContext,
@@ -104,11 +119,15 @@ console.log(
 	`✨ Migrating ${process.env.V8_URL} (v8) to ${process.env.V9_URL} (v9)...`
 );
 
-tasks
-	.run()
-	.then(() => {
-		console.log("✨ All set! Migration successful.");
-	})
-	.catch((err) => {
-		console.error(err);
-	});
+try {
+	await tasks.run();
+
+	console.log("✨ All set! Migration successful.");
+} catch (err) {
+	delete err.context;
+	const errorFilename = `./error-${new Date()
+		.toISOString()
+		.replace(/[^\w]/g, "_")}.log`;
+	await writeFile(errorFilename, `\n${err.message}\n${err.stack}\n`);
+	await writeContext(ctx, false);
+}

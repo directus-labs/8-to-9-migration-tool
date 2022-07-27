@@ -6,34 +6,40 @@ export async function migrateUsers(context) {
 	return new Listr([
 		{
 			title: "Downloading Roles",
-			skip: context => context.completedSteps.roles === true,
+			skip: (context) => context.completedSteps.roles === true,
 			task: downloadRoles,
 		},
 		{
 			title: "Creating Roles",
-			skip: context => context.completedSteps.roles === true,
+			skip: (context) => context.completedSteps.roles === true,
 			task: createRoles,
 		},
 		{
-      title: "Saving Roles context",
-			skip: context => context.completedSteps.roles === true,
-      task: () => writeContext(context, "roles"),
-    },
+			title: "Saving Roles context",
+			skip: (context) => context.completedSteps.roles === true,
+			task: () => {
+				context.section = "roles";
+				writeContext(context);
+			},
+		},
 		{
 			title: "Downloading Users",
-			skip: context => context.completedSteps.users === true,
+			skip: (context) => context.completedSteps.users === true,
 			task: downloadUsers,
 		},
 		{
 			title: "Creating Users",
-			skip: context => context.completedSteps.users === true,
+			skip: (context) => context.completedSteps.users === true,
 			task: createUsers,
 		},
 		{
-      title: "Saving users context",
-			skip: context => context.completedSteps.users === true,
-			task: () => writeContext(context, "users"),
-    },
+			title: "Saving users context",
+			skip: (context) => context.completedSteps.users === true,
+			task: () => {
+				context.section = "users";
+				writeContext(context);
+			},
+		},
 	]);
 }
 
@@ -67,7 +73,9 @@ async function createRoles(context) {
 		createdRolesAsArray = [createdRolesAsArray];
 
 	context.roles.forEach((role, index) => {
-		context.roleMap[role.id] = createdRolesAsArray.find(r => r.name == role.name).id;
+		context.roleMap[role.id] = createdRolesAsArray.find(
+			(r) => r.name == role.name
+		).id;
 	});
 
 	context.roles = createdRolesAsArray;
@@ -77,40 +85,68 @@ async function downloadUsers(context) {
 	const response = await apiV8.get("/users", {
 		params: {
 			limit: -1,
-			status: '*',
-		}
+			status: "*",
+		},
 	});
 	context.users = response.data.data;
+	context.userMap = context.userMap || {};
 }
 
 async function createUsers(context) {
-	const usersV9 = context.users.map((user) => ({
-		first_name: user.first_name,
-		last_name: user.last_name,
-		email: user.email,
-		title: user.title,
-		description: user.description,
-		// avatar: user.avatar, @TODO: files first
-		language: user.locale,
-		theme: user.theme,
-		role: context.roleMap[user.role],
-		token: user.token,
-	}));
+	let createdUsersAsArray = [];
+	let chunk = [];
+	let offset = 0;
+	const size = 10;
 
-	const createdUsers = await apiV9.post("/users", usersV9, {
-		params: { limit: -1 },
-	});
+	do {
+		chunk = context.users.slice(offset * size, (offset + 1) * size);
 
-	let createdUsersAsArray = createdUsers.data.data;
+		const usersV9 = chunk.flatMap((user) => {
+			if (context.userMap[user.id]) return [];
 
-	if (Array.isArray(createdUsersAsArray) === false)
-		createdUsersAsArray = [createdUsersAsArray];
+			return [
+				{
+					first_name: user.first_name,
+					last_name: user.last_name,
+					email: user.email,
+					title: user.title,
+					description: user.description,
+					// avatar: user.avatar, @TODO: files first
+					language: user.locale,
+					theme: user.theme,
+					role: context.roleMap[user.role],
+					token: user.token,
+				},
+			];
+		});
 
-	context.userMap = {};
+		offset++;
+
+		if (!usersV9.length) continue;
+
+		const response = await apiV9.post("/users", usersV9, {
+			params: { limit: -1 },
+		});
+
+		const createdUsers = response.data.data;
+
+		for (const userV8 of chunk) {
+			context.userMap[userV8.id] = createdUsers.find(
+				(u) => u.email == userV8.email
+			).id;
+		}
+
+		createdUsersAsArray = createdUsersAsArray.concat(createdUsers);
+		await writeContext(context, false);
+	} while (chunk.length === 10);
 
 	context.users.forEach((user, index) => {
-		context.userMap[user.id] = createdUsersAsArray.find(u => u.email == user.email).id;
+		if (context.userMap[user.id]) return;
+
+		context.userMap[user.id] = createdUsersAsArray.find(
+			(u) => u.email == user.email
+		).id;
 	});
 
-	context.users = createdUsers.data.data;
+	context.users = createdUsersAsArray;
 }

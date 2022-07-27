@@ -1,7 +1,12 @@
 import Listr from "listr";
 import { apiV8, apiV9 } from "../api.js";
+import { writeContext } from "../index.js";
+
+const LIMIT = 10;
 
 export async function migrateData(context) {
+	context.section = "data";
+
 	return new Listr([
 		{
 			title: "Getting Counts",
@@ -11,11 +16,18 @@ export async function migrateData(context) {
 			title: "Inserting Data",
 			task: async () => await insertData(context),
 		},
+		{
+			title: "Saving context",
+			task: () => writeContext(context),
+		},
 	]);
 }
 
 async function getCounts(context) {
-	context.counts = {};
+	context.counts = context.counts || {};
+	context.dataMap = context.dataMap || {};
+
+	if (Object.keys(context.counts).length) return;
 
 	for (const collection of context.collections) {
 		const contextCollection = context.collectionsV9.find(
@@ -144,10 +156,16 @@ async function insertData(context) {
 
 function insertCollection(collection) {
 	return async (context, task) => {
-		const pages = Math.ceil(context.counts[collection.collection] / 100);
+		if (
+			Object.keys(context.dataMap[collection.collection] || {}).length ===
+			context.counts[collection.collection]
+		)
+			return;
+
+		const pages = Math.ceil(context.counts[collection.collection] / LIMIT);
 
 		for (let i = 0; i < pages; i++) {
-			task.output = `Inserting items ${i * 100 + 1}—${(i + 1) * 100}/${
+			task.output = `Inserting items ${i * LIMIT + 1}—${(i + 1) * LIMIT}/${
 				context.counts[collection.collection]
 			}`;
 			await insertBatch(collection, i, context, task);
@@ -162,8 +180,8 @@ async function insertBatch(collection, page, context, task) {
 
 	const getRecordsResponse = () => {
 		const params = {
-			offset: page * 100,
-			limit: 100,
+			offset: page * LIMIT,
+			limit: LIMIT,
 		};
 
 		if (contextCollection && contextCollection?.meta?.archive_value) {
@@ -192,58 +210,63 @@ async function insertBatch(collection, page, context, task) {
 		);
 	});
 
-	const datetimeFields = Object.values(collection.fields).filter(
-		(field) => field.type === "datetime"
+	const datetimeFields = Object.values(collection.fields).filter((field) =>
+		["datetime", "date"].includes(field.type)
 	);
 
-	const itemRecords =
-		systemRelationsForCollection.length === 0 && datetimeFields.length === 0
-			? recordsResponse.data.data
-			: recordsResponse.data.data.map((item) => {
-					for (const systemRelation of systemRelationsForCollection) {
-						if (systemRelation?.meta?.one_collection === "directus_users") {
-							item[systemRelation?.meta?.many_field] =
-								context.userMap[item[systemRelation?.meta?.many_field]];
-						} else if (
-							systemRelation?.meta?.one_collection === "directus_files"
-						) {
-							item[systemRelation?.meta?.many_field] =
-								context.fileMap[item[systemRelation?.meta?.many_field]];
-						} else if (
-							systemRelation?.meta?.one_collection === "directus_roles"
-						) {
-							item[systemRelation?.meta?.many_field] =
-								context.roleMap[item[systemRelation?.meta?.many_field]];
-						}
-					}
+	const itemRecords = recordsResponse.data.data.flatMap((item) => {
+		if (context.dataMap?.[collection.collection]?.[item.id]) return [];
 
-					for (const datetimeField of datetimeFields) {
-						item[datetimeField.field] = new Date(
-							item[datetimeField.field]
-						).toISOString();
-					}
+		if (
+			systemRelationsForCollection.length === 0 &&
+			datetimeFields.length === 0
+		)
+			return [item];
 
-					return item;
-			  });
-
-	try {
-		if (collection.single === true) {
-			await apiV9.patch(`/items/${collection.collection}`, itemRecords[0]);
-		} else {
-			await apiV9.post(`/items/${collection.collection}`, itemRecords);
+		for (const systemRelation of systemRelationsForCollection) {
+			if (systemRelation?.meta?.one_collection === "directus_users") {
+				item[systemRelation?.meta?.many_field] =
+					context.userMap[item[systemRelation?.meta?.many_field]];
+			} else if (systemRelation?.meta?.one_collection === "directus_files") {
+				item[systemRelation?.meta?.many_field] =
+					context.fileMap[item[systemRelation?.meta?.many_field]];
+			} else if (systemRelation?.meta?.one_collection === "directus_roles") {
+				item[systemRelation?.meta?.many_field] =
+					context.roleMap[item[systemRelation?.meta?.many_field]];
+			}
 		}
-	} catch (err) {
-		console.error(
-			`Error migrating data for collection [${
-				collection.collection
-			}], response: ${JSON.stringify(err.response?.data, null, 2)}`
-		);
-		if (!context.allowFailures) {
-			throw Error(
-				"Data migration failed. Check directus logs for most insight."
-			);
+
+		for (const datetimeField of datetimeFields) {
+			if (item[datetimeField.field])
+				item[datetimeField.field] = new Date(
+					item[datetimeField.field]
+				).toISOString();
 		}
+
+		return [item];
+	});
+
+	if (!itemRecords.length) return;
+
+	if (collection.single === true) {
+		await apiV9.patch(`/items/${collection.collection}`, itemRecords[0]);
+	} else {
+		await apiV9.post(`/items/${collection.collection}`, itemRecords);
 	}
+
+	const collectionMap = itemRecords.reduce(
+		(map, item) => ({
+			...map,
+			[item.id]: true,
+		}),
+		context.dataMap[collection.collection] || {}
+	);
+
+	context.dataMap = {
+		...context.dataMap,
+		[collection.collection]: collectionMap,
+	};
+	await writeContext(context, false);
 }
 
 function sleep(ms) {

@@ -3,6 +3,8 @@ import { apiV8, apiV9 } from "../api.js";
 import { writeContext } from "../index.js";
 
 export async function migrateFiles(context) {
+	context.section = "files";
+
 	return new Listr([
 		{
 			title: "Getting File Count",
@@ -14,7 +16,7 @@ export async function migrateFiles(context) {
 		},
 		{
 			title: "Saving context",
-			task: () => writeContext(context, "files"),
+			task: () => writeContext(context),
 		},
 	]);
 }
@@ -28,7 +30,7 @@ async function getCount(context) {
 	});
 
 	context.fileCount = count.data.meta.total_count;
-	context.fileMap = {};
+	context.fileMap = context.fileMap || {};
 }
 
 async function uploadFiles(context) {
@@ -56,6 +58,8 @@ function uploadBatch(page) {
 		});
 
 		for (const fileRecord of records.data.data) {
+			if (context.fileMap[fileRecord.id]) continue;
+
 			task.output = fileRecord.filename_download;
 			let url;
 			if (fileRecord.data.asset_url) {
@@ -69,29 +73,16 @@ function uploadBatch(page) {
 				url = fileRecord.data.full_url;
 			}
 
-			try {
-				const savedFile = await apiV9.post("/files/import", {
-					url,
-					data: {
-						filename_download: fileRecord.filename_download,
-						title: fileRecord.title,
-						description: fileRecord.description,
-					},
-				});
+			const savedFile = await apiV9.post("/files/import", {
+				url,
+				data: {
+					filename_download: fileRecord.filename_download,
+					title: fileRecord.title,
+					description: fileRecord.description,
+				},
+			});
 
-				context.fileMap[fileRecord.id] = savedFile.data.data.id;
-			} catch (err) {
-				console.error(
-					`Error migrating file with id [${
-						fileRecord.id
-					}], response: ${JSON.stringify(err.response?.data, null, 2)}`
-				);
-				if (!context.allowFailures) {
-					throw Error(
-						"File migration failed. Check directus logs for most insight."
-					);
-				}
-			}
+			context.fileMap[fileRecord.id] = savedFile.data.data.id;
 		}
 	};
 }

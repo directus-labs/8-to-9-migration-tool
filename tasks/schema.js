@@ -5,6 +5,8 @@ import { interfaceMap } from "../constants/interface-map.js";
 import { writeContext } from "../index.js";
 
 export async function migrateSchema(context) {
+	context.section = "schema";
+
 	return new Listr([
 		{
 			title: "Downloading Schema",
@@ -14,7 +16,7 @@ export async function migrateSchema(context) {
 		{
 			title: "Saving schema context",
 			skip: (context) => context.completedSteps.schema === true,
-			task: () => writeContext(context, "schema"),
+			task: () => writeContext(context),
 		},
 		{
 			title: "Creating Collections",
@@ -24,7 +26,10 @@ export async function migrateSchema(context) {
 		{
 			title: "Saving collections context",
 			skip: (context) => context.completedSteps.collections === true,
-			task: () => writeContext(context, "collections"),
+			task: () => {
+				context.section = "collections";
+				writeContext(context);
+			},
 		},
 	]);
 }
@@ -203,6 +208,17 @@ function migrateCollection(collection, context) {
 			},
 			schema: {},
 			fields: Object.values(collection.fields).map((details) => {
+				const relation =
+					context.relationsV8Map?.[collection.collection]?.[details.field] ||
+					{};
+
+				const isUuid =
+					details.field.includes("directus_files_id") ||
+					details.interface === "user-roles" ||
+					["directus_files", "directus_users"].includes(
+						relation?.collection_one
+					);
+
 				return {
 					field: details.field,
 					type:
@@ -211,8 +227,7 @@ function migrateCollection(collection, context) {
 							? "text"
 							: details.interface === "many-to-many"
 							? "m2m"
-							: details.field.includes("directus_files_id") ||
-							  details.interface === "user-roles"
+							: isUuid
 							? "uuid"
 							: typeMap[details.type.toLowerCase()],
 					meta: {
@@ -249,20 +264,7 @@ function migrateCollection(collection, context) {
 			}),
 		};
 		context.collectionsV9.push(collectionV9);
-		try {
-			await apiV9.post("/collections", collectionV9);
-		} catch (err) {
-			console.error(
-				`Error migrating schema for collection [${
-					collectionV9.collection
-				}], response: ${JSON.stringify(err.response?.data, null, 2)}`
-			);
-			if (!context.allowFailures) {
-				throw Error(
-					"Schema migration failed. Check directus logs for most insight."
-				);
-			}
-		}
+		await apiV9.post("/collections", collectionV9);
 	};
 
 	function extractValue(details) {
