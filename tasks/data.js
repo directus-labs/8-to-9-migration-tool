@@ -24,7 +24,10 @@ export async function migrateData(context) {
 }
 
 async function getCounts(context) {
-  context.counts = {};
+  context.counts = context.counts || {};
+  context.dataMap = context.dataMap || {};
+
+  if (Object.keys(context.counts).length) return;
 
   for (const collection of context.collections) {
     const contextCollection = context.collectionsV9.find(
@@ -54,8 +57,6 @@ async function getCounts(context) {
       context.counts[collection.collection] = count.data.meta.total_count;
     }
   }
-
-  context.dataMap = context.dataMap || {};
 }
 
 function isJunctionCollection(note) {
@@ -237,9 +238,9 @@ async function insertBatch(collection, page, context, task) {
 
     for (const datetimeField of datetimeFields) {
       if (item[datetimeField.field])
-      item[datetimeField.field] = new Date(
-        item[datetimeField.field]
-      ).toISOString();
+        item[datetimeField.field] = new Date(
+          item[datetimeField.field]
+        ).toISOString();
     }
 
     return [item];
@@ -247,28 +248,25 @@ async function insertBatch(collection, page, context, task) {
 
   if (!itemRecords.length) return;
 
-    if (collection.single === true) {
-      await apiV9.patch(`/items/${collection.collection}`, itemRecords[0]);
-    } else {
-      await apiV9.post(`/items/${collection.collection}`, itemRecords);
-    }
+  if (collection.single === true) {
+    await apiV9.patch(`/items/${collection.collection}`, itemRecords[0]);
+  } else {
+    await apiV9.post(`/items/${collection.collection}`, itemRecords);
+  }
 
-    const collectionMap = itemRecords.reduce(
-      (map, item) => ({
-        ...map,
-        [collection.collection]: {
-          ...map[collection.collection],
-          [item.id]: true,
-        },
-      }),
-      {}
-    );
+  const collectionMap = itemRecords.reduce(
+    (map, item) => ({
+      ...map,
+      [item.id]: true,
+    }),
+    context.dataMap[collection.collection] || {}
+  );
 
-    context.dataMap = {
-      ...context.dataMap,
-      ...collectionMap,
-    };
-    await writeContext(context, false);
+  context.dataMap = {
+    ...context.dataMap,
+    [collection.collection]: collectionMap,
+  };
+  await writeContext(context, false);
 }
 
 function sleep(ms) {

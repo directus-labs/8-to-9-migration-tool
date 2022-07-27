@@ -124,23 +124,25 @@ async function createUsers(context) {
 
     if (!usersV9.length) continue;
 
-      const response = await apiV9.post("/users", usersV9, {
-        params: { limit: -1 },
-      });
+    const response = await apiV9.post("/users", usersV9, {
+      params: { limit: -1 },
+    });
 
-      const createdUsers = response.data.data;
+    const createdUsers = response.data.data;
 
-      for (const userV8 of chunk) {
-        context.userMap[userV8.id] = createdUsers.find(
-          (u) => u.email == userV8.email
-        ).id;
-      }
+    for (const userV8 of chunk) {
+      context.userMap[userV8.id] = createdUsers.find(
+        (u) => u.email == userV8.email
+      ).id;
+    }
 
-      createdUsersAsArray = createdUsersAsArray.concat(createdUsers);
-      await writeContext(context, false);
+    createdUsersAsArray = createdUsersAsArray.concat(createdUsers);
+    await writeContext(context, false);
   } while (chunk.length === 10);
 
   context.users.forEach((user, index) => {
+    if (context.userMap[user.id]) return;
+
     context.userMap[user.id] = createdUsersAsArray.find(
       (u) => u.email == user.email
     ).id;

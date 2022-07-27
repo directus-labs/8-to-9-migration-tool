@@ -49,10 +49,16 @@ async function getRelationsData(context) {
     }),
     {}
   );
+  context.relationsMigrated = context.relationsMigrated || {};
 }
 
 async function migrateRelationsData(context) {
+  const migrated = [];
+
   const relationsV9 = context.relationsV8.flatMap((relation) => {
+    if (context.relationsMigrated[relation.id]) return [];
+    migrated.push(relation.id);
+
     if (relation.collection_many.startsWith("directus_")) return [];
 
     return [
@@ -103,4 +109,10 @@ async function migrateRelationsData(context) {
   }
 
   context.relations = [...relationsV9, ...systemFields];
+
+  for (const id of migrated) {
+    context.relationsMigrated[id] = true;
+  }
+
+  await writeContext(context, false);
 }
