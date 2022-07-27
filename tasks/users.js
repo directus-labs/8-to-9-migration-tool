@@ -124,7 +124,6 @@ async function createUsers(context) {
 
     if (!usersV9.length) continue;
 
-    try {
       const response = await apiV9.post("/users", usersV9, {
         params: { limit: -1 },
       });
@@ -139,9 +138,6 @@ async function createUsers(context) {
 
       createdUsersAsArray = createdUsersAsArray.concat(createdUsers);
       await writeContext(context, false);
-    } catch (error) {
-      console.error(error.response);
-    }
   } while (chunk.length === 10);
 
   context.users.forEach((user, index) => {
