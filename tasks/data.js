@@ -2,6 +2,8 @@ import Listr from "listr";
 import { apiV8, apiV9 } from "../api.js";
 import { writeContext } from "../index.js";
 
+const LIMIT = 10;
+
 export async function migrateData(context) {
   context.section = "data";
 
@@ -153,10 +155,16 @@ async function insertData(context) {
 
 function insertCollection(collection) {
   return async (context, task) => {
-    const pages = Math.ceil(context.counts[collection.collection] / 10);
+    if (
+      Object.keys(context.dataMap[collection.collection] || {}).length ===
+      context.counts[collection.collection]
+    )
+      return;
+
+    const pages = Math.ceil(context.counts[collection.collection] / LIMIT);
 
     for (let i = 0; i < pages; i++) {
-      task.output = `Inserting items ${i * 100 + 1}—${(i + 1) * 100}/${
+      task.output = `Inserting items ${i * LIMIT + 1}—${(i + 1) * LIMIT}/${
         context.counts[collection.collection]
       }`;
       await insertBatch(collection, i, context, task);
@@ -171,8 +179,8 @@ async function insertBatch(collection, page, context, task) {
 
   const getRecordsResponse = () => {
     const params = {
-      offset: page * 100,
-      limit: 100,
+      offset: page * LIMIT,
+      limit: LIMIT,
     };
 
     if (contextCollection && contextCollection?.meta?.archive_value) {
