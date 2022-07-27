@@ -7,6 +7,7 @@ import { migrateFiles } from "./tasks/files.js";
 import { migrateUsers } from "./tasks/users.js";
 import { migrateData } from "./tasks/data.js";
 import { fetchRelations, migrateRelations } from "./tasks/relations.js";
+import { writeFile } from "fs/promises";
 
 const commandLineOptions = commandLineArgs([
   {
@@ -123,6 +124,10 @@ try {
 
   console.log("✨ All set! Migration successful.");
 } catch (err) {
-  console.error(err);
+  delete err.context;
+  const errorFilename = `./error-${new Date()
+    .toISOString()
+    .replace(/[^\w]/g, "_")}.log`;
+  await writeFile(errorFilename, `\n${err.message}\n${err.stack}\n`);
   await writeContext(ctx, false);
 }
