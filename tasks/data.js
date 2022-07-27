@@ -238,7 +238,6 @@ async function insertBatch(collection, page, context, task) {
 
   if (!itemRecords.length) return;
 
-  try {
     if (collection.single === true) {
       await apiV9.patch(`/items/${collection.collection}`, itemRecords[0]);
     } else {
@@ -261,18 +260,6 @@ async function insertBatch(collection, page, context, task) {
       ...collectionMap,
     };
     await writeContext(context, false);
-  } catch (err) {
-    console.error(
-      `Error migrating data for collection [${
-        collection.collection
-      }], response: ${JSON.stringify(err.response?.data, null, 2)}`
-    );
-    if (!context.allowFailures) {
-      throw Error(
-        "Data migration failed. Check directus logs for most insight."
-      );
-    }
-  }
 }
 
 function sleep(ms) {

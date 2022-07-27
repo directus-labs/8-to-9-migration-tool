@@ -264,20 +264,7 @@ function migrateCollection(collection, context) {
       }),
     };
     context.collectionsV9.push(collectionV9);
-    try {
-      await apiV9.post("/collections", collectionV9);
-    } catch (err) {
-      console.error(
-        `Error migrating schema for collection [${
-          collectionV9.collection
-        }], response: ${JSON.stringify(err.response?.data, null, 2)}`
-      );
-      if (!context.allowFailures) {
-        throw Error(
-          "Schema migration failed. Check directus logs for most insight."
-        );
-      }
-    }
+    await apiV9.post("/collections", collectionV9);
   };
 
   function extractValue(details) {
